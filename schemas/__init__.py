@@ -1,1 +1,1 @@
-from schemas.story import StoryCreate, StoryUpdate, StoryResponse
+from schemas.story import StoryCreate, StoryResponse, StoryUpdate

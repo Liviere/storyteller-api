@@ -1,1 +1,1 @@
-from database.connection import get_db, create_tables
+from database.connection import create_tables, get_db
