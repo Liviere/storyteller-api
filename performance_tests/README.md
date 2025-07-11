@@ -65,37 +65,37 @@ Use the VS Code tasks or run these commands directly:
 #### Light Load Test (Development)
 
 ```bash
-poetry run locust --host=http://localhost:8080 --users 10 --spawn-rate 2 --run-time 2m --html reports/light_load_report.html
+poetry run locust --host=http://localhost:8080 --users 10 --spawn-rate 2 --run-time 2m --html reports/performance/light_load_report.html
 ```
 
 #### Medium Load Test (Staging)
 
 ```bash
-poetry run locust --host=http://localhost:8080 --users 50 --spawn-rate 5 --run-time 5m --html reports/medium_load_report.html
+poetry run locust --host=http://localhost:8080 --users 50 --spawn-rate 5 --run-time 5m --html reports/performance/medium_load_report.html
 ```
 
 #### Heavy Load Test (Production Readiness)
 
 ```bash
-poetry run locust --host=http://localhost:8080 --users 200 --spawn-rate 10 --run-time 10m --html reports/heavy_load_report.html
+poetry run locust --host=http://localhost:8080 --users 200 --spawn-rate 10 --run-time 10m --html reports/performance/heavy_load_report.html
 ```
 
 #### Stress Test (Find Limits)
 
 ```bash
-poetry run locust --host=http://localhost:8080 --users 500 --spawn-rate 20 --run-time 5m --html reports/stress_test_report.html
+poetry run locust --host=http://localhost:8080 --users 500 --spawn-rate 20 --run-time 5m --html reports/performance/stress_test_report.html
 ```
 
 #### Spike Test (Sudden Traffic)
 
 ```bash
-poetry run locust --host=http://localhost:8080 --users 100 --spawn-rate 50 --run-time 3m --html reports/spike_test_report.html
+poetry run locust --host=http://localhost:8080 --users 100 --spawn-rate 50 --run-time 3m --html reports/performance/spike_test_report.html
 ```
 
 #### Endurance Test (Long Running)
 
 ```bash
-poetry run locust --host=http://localhost:8080 --users 30 --spawn-rate 3 --run-time 30m --html reports/endurance_test_report.html
+poetry run locust --host=http://localhost:8080 --users 30 --spawn-rate 3 --run-time 30m --html reports/performance/endurance_test_report.html
 ```
 
 ### Command Line Options
@@ -159,7 +159,7 @@ Locust generates detailed reports including:
 - Failure analysis
 - Charts and graphs
 
-Reports are saved to the `reports/` directory when using `--html` option.
+Reports are saved to the `reports/performance/` directory when using `--html` option.
 
 ## Best Practices
 

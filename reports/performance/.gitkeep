@@ -1,0 +1,2 @@
+# This file ensures the performance reports directory is tracked by Git
+# Performance test reports are generated here by Locust with --html option

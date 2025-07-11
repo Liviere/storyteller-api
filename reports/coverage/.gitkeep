@@ -1,0 +1,2 @@
+# This file ensures the coverage reports directory is tracked by Git
+# Coverage reports are generated here by pytest with --cov-report=html

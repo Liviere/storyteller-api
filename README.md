@@ -200,7 +200,7 @@ poetry run pytest
 
 # Run with coverage report
 poetry run pytest --cov=. --cov-report=html
-open htmlcov/index.html
+open reports/coverage/index.html
 
 # Run specific test file
 poetry run pytest tests/test_api.py -v
@@ -279,7 +279,7 @@ poetry run locust --host=http://localhost:8080
 # Then open http://localhost:8089
 
 # Or run predefined test scenarios
-poetry run locust --host=http://localhost:8080 --headless --users 50 --spawn-rate 5 --run-time 2m --html reports/load_test.html
+poetry run locust --host=http://localhost:8080 --headless --users 50 --spawn-rate 5 --run-time 2m --html reports/performance/load_test.html
 ```
 
 ### Test Scenarios

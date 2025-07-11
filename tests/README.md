@@ -64,7 +64,7 @@ poetry run pytest tests/test_integration.py
 poetry run pytest --cov=. --cov-report=html
 
 # View coverage report
-open htmlcov/index.html
+open reports/coverage/index.html
 ```
 
 ### Run Tests with Verbose Output

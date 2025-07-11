@@ -38,7 +38,9 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-htmlcov/
+# Coverage reports
+reports/coverage/*
+!reports/coverage/.gitkeep
 .tox/
 .nox/
 .coverage
@@ -158,6 +160,6 @@ Thumbs.db
 notes.txt
 
 # Locust performance test reports
-reports/*.html
-reports/*.csv
-reports/*.xml
+reports/performance/*.html
+reports/performance/*.csv
+reports/performance/*.xml
