@@ -15,14 +15,39 @@ from main import app
 from models.story import Base
 
 
+def get_test_database_url():
+    """Get test database URL based on environment."""
+    # Check if we should use MySQL for testing (e.g., in CI/CD)
+    test_mysql_url = os.getenv("TEST_DATABASE_URL")
+    if test_mysql_url and "mysql" in test_mysql_url:
+        return test_mysql_url
+    
+    # Default to SQLite for local testing
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    temp_file.close()
+    return f"sqlite:///{temp_file.name}"
+
+
 @pytest.fixture
 def temp_db():
     """Create a temporary database for testing."""
-    temp_file = tempfile.NamedTemporaryFile(delete=False)
-    temp_file.close()
+    test_database_url = get_test_database_url()
     
-    test_database_url = f"sqlite:///{temp_file.name}"
-    engine = create_engine(test_database_url, connect_args={"check_same_thread": False})
+    if "mysql" in test_database_url:
+        # MySQL configuration for testing
+        engine = create_engine(
+            test_database_url,
+            pool_pre_ping=True,
+            pool_recycle=300,
+        )
+        cleanup_file = None
+    else:
+        # SQLite configuration for testing
+        engine = create_engine(
+            test_database_url, 
+            connect_args={"check_same_thread": False}
+        )
+        cleanup_file = test_database_url.replace("sqlite:///", "")
     
     # Create tables
     Base.metadata.create_all(bind=engine)
@@ -33,7 +58,8 @@ def temp_db():
     
     # Cleanup
     Base.metadata.drop_all(bind=engine)
-    os.unlink(temp_file.name)
+    if cleanup_file and os.path.exists(cleanup_file):
+        os.unlink(cleanup_file)
 
 
 @pytest.fixture

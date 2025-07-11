@@ -7,20 +7,93 @@ REST API for managing stories built with FastAPI and Poetry.
 - Create, read, update, and delete stories
 - Filter stories by genre, author, and publication status
 - Publish/unpublish stories
-- SQLite database with SQLAlchemy ORM
+- **MySQL database with SQLAlchemy ORM (with Docker support)**
+- **SQLite fallback for development**
 - Automatic API documentation with Swagger UI
 - CORS support for frontend integration
 - Modern dependency management with Poetry
 - Development tools: Black, isort, flake8, mypy, pytest
+- **Docker and docker-compose for easy deployment**
+- **Isolated test environment with dedicated MySQL instance**
+- **Performance testing with Locust**
 
 ## Quick Start
 
-### Prerequisites
+### Option 1: Docker Setup (Recommended)
+
+#### Prerequisites
+
+- Docker and Docker Compose
+- Git
+
+#### Installation with Docker
+
+1. Clone or navigate to the project directory:
+
+```bash
+cd /home/livierek/projekty/story-teller
+```
+
+2. Set up environment variables:
+
+```bash
+cp .env.example .env
+# Edit .env file if needed
+```
+
+3. Start all services:
+
+```bash
+./docker-setup.sh start
+```
+
+This will start:
+
+- MySQL database on port 3306
+- FastAPI application on port 8080
+- phpMyAdmin on port 8081
+
+4. Access the application:
+
+- API: http://localhost:8080
+- API Documentation: http://localhost:8080/docs
+- Database Admin: http://localhost:8081
+
+#### Docker Commands
+
+```bash
+# Start services
+./docker-setup.sh start
+
+# Stop services
+./docker-setup.sh stop
+
+# View logs
+./docker-setup.sh logs
+
+# Connect to MySQL
+./docker-setup.sh mysql
+
+# Migrate data from SQLite (if you have existing data)
+./docker-setup.sh migrate
+
+# Clean up (removes all data!)
+./docker-setup.sh clean
+
+# Test environment (isolated MySQL for testing)
+docker-compose -f docker-compose.test.yml up -d    # Start test database
+docker-compose -f docker-compose.test.yml down -v  # Clean test environment
+```
+
+### Option 2: Local Development Setup
+
+#### Prerequisites
 
 - Python 3.8.1+
 - Poetry (https://python-poetry.org/docs/#installation)
+- MySQL (optional, defaults to SQLite)
 
-### Installation
+#### Installation
 
 1. Clone or navigate to the project directory:
 
@@ -142,6 +215,43 @@ poetry run pytest tests/test_api.py::TestStoriesAPI::test_create_story -v
 - **Error handling**: Tests for both success and failure scenarios
 - **Fixtures**: Reusable test data and database sessions
 - **Fast execution**: Tests run in under 2 seconds
+
+### Docker Test Environment
+
+For integration testing with MySQL (same as production), use the dedicated test environment:
+
+```bash
+# Start isolated test database (MySQL on port 3307)
+docker-compose -f docker-compose.test.yml up -d
+
+# Run tests with MySQL instead of SQLite
+TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" \
+poetry run pytest tests/ -v
+
+# Run integration tests specifically
+TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" \
+poetry run pytest tests/test_integration.py -v
+
+# Clean up test environment (removes all test data)
+docker-compose -f docker-compose.test.yml down -v
+```
+
+#### Test Environment Features
+
+- **Isolated MySQL**: Separate database instance on port 3307
+- **Production parity**: Same MySQL version and configuration as production
+- **Clean state**: Each test run can start with fresh database
+- **CI/CD ready**: Perfect for automated testing pipelines
+- **No conflicts**: Runs alongside development environment
+
+#### Test Database Configuration
+
+| Setting       | Development          | Test Environment          |
+| ------------- | -------------------- | ------------------------- |
+| **Port**      | 3306                 | 3307                      |
+| **Database**  | `storyteller`        | `storyteller_test`        |
+| **User**      | `storyteller_user`   | `test_user`               |
+| **Container** | `story-teller-mysql` | `story-teller-mysql-test` |
 
 ## Performance Testing
 
