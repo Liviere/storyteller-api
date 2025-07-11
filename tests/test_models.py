@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from models.story import Story
+from app.models.story import Story
 
 
 class TestStoryModel:

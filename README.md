@@ -352,22 +352,28 @@ curl "http://localhost:8080/api/v1/stories/?genre=Fantasy&published_only=true&li
 
 ```
 story-teller/
-├── main.py                 # FastAPI application entry point
+├── main.py                 # FastAPI application entry point (imports from app/)
 ├── pyproject.toml          # Poetry configuration and dependencies
 ├── poetry.lock             # Poetry lock file
 ├── .env                   # Environment variables
-├── models/                # SQLAlchemy models
+├── app/                   # Main application package
 │   ├── __init__.py
-│   └── story.py
-├── schemas/               # Pydantic schemas
-│   ├── __init__.py
-│   └── story.py
-├── routers/               # API route handlers
-│   ├── __init__.py
-│   └── stories.py
-└── database/              # Database configuration
-    ├── __init__.py
-    └── connection.py
+│   ├── main.py            # FastAPI app creation and configuration
+│   ├── models/            # SQLAlchemy models
+│   │   ├── __init__.py
+│   │   └── story.py
+│   ├── schemas/           # Pydantic schemas
+│   │   ├── __init__.py
+│   │   └── story.py
+│   ├── routers/           # API route handlers
+│   │   ├── __init__.py
+│   │   └── stories.py
+│   └── database/          # Database configuration
+│       ├── __init__.py
+│       └── connection.py
+├── tests/                 # Test suite
+├── performance_tests/     # Performance testing with Locust
+└── docker-compose.yml     # Docker configuration
 ```
 
 ### Code Quality

@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 # Add the project root to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from models.story import Story, Base
+from app.models.story import Story, Base
 
 load_dotenv()
 

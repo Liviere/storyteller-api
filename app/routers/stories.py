@@ -3,9 +3,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models.story import Story
-from schemas.story import StoryCreate, StoryResponse, StoryUpdate
+from app.database import get_db
+from app.models.story import Story
+from app.schemas.story import StoryCreate, StoryResponse, StoryUpdate
 
 router = APIRouter()
 

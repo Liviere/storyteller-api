@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from schemas.story import StoryBase, StoryCreate, StoryResponse, StoryUpdate
+from app.schemas.story import StoryBase, StoryCreate, StoryResponse, StoryUpdate
 
 
 class TestStorySchemas:

@@ -10,9 +10,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from database.connection import get_db
+from app.database.connection import get_db
 from main import app
-from models.story import Base
+from app.models.story import Base
 
 
 def get_test_database_url():
