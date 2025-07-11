@@ -1,6 +1,7 @@
 """
 Test configuration and fixtures for Story Teller API tests.
 """
+
 import os
 import tempfile
 from typing import Generator
@@ -11,8 +12,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.database.connection import get_db
-from main import app
 from app.models.story import Base
+from main import app
 
 
 def get_test_database_url():
@@ -21,7 +22,7 @@ def get_test_database_url():
     test_mysql_url = os.getenv("TEST_DATABASE_URL")
     if test_mysql_url and "mysql" in test_mysql_url:
         return test_mysql_url
-    
+
     # Default to SQLite for local testing
     temp_file = tempfile.NamedTemporaryFile(delete=False)
     temp_file.close()
@@ -32,7 +33,7 @@ def get_test_database_url():
 def temp_db():
     """Create a temporary database for testing."""
     test_database_url = get_test_database_url()
-    
+
     if "mysql" in test_database_url:
         # MySQL configuration for testing
         engine = create_engine(
@@ -44,18 +45,17 @@ def temp_db():
     else:
         # SQLite configuration for testing
         engine = create_engine(
-            test_database_url, 
-            connect_args={"check_same_thread": False}
+            test_database_url, connect_args={"check_same_thread": False}
         )
         cleanup_file = test_database_url.replace("sqlite:///", "")
-    
+
     # Create tables
     Base.metadata.create_all(bind=engine)
-    
+
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    
+
     yield TestingSessionLocal, engine
-    
+
     # Cleanup
     Base.metadata.drop_all(bind=engine)
     if cleanup_file and os.path.exists(cleanup_file):
@@ -77,19 +77,19 @@ def db_session(temp_db):
 def client(temp_db) -> Generator[TestClient, None, None]:
     """Create a test client with a temporary database."""
     TestingSessionLocal, engine = temp_db
-    
+
     def override_get_db():
         try:
             db = TestingSessionLocal()
             yield db
         finally:
             db.close()
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with TestClient(app) as test_client:
         yield test_client
-    
+
     app.dependency_overrides.clear()
 
 
@@ -101,7 +101,7 @@ def sample_story_data():
         "content": "This is a test story content.",
         "author": "Test Author",
         "genre": "Fiction",
-        "is_published": False
+        "is_published": False,
     }
 
 
@@ -114,20 +114,20 @@ def sample_stories_data():
             "content": "A tale of magic and dragons.",
             "author": "Fantasy Author",
             "genre": "Fantasy",
-            "is_published": True
+            "is_published": True,
         },
         {
             "title": "Sci-Fi Journey",
             "content": "A story about space exploration.",
             "author": "Sci-Fi Author",
             "genre": "Science Fiction",
-            "is_published": False
+            "is_published": False,
         },
         {
             "title": "Mystery Novel",
             "content": "A thrilling mystery story.",
             "author": "Mystery Author",
             "genre": "Mystery",
-            "is_published": True
-        }
+            "is_published": True,
+        },
     ]

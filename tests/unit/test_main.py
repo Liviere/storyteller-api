@@ -1,6 +1,7 @@
 """
 Tests for main FastAPI application.
 """
+
 import pytest
 from fastapi import status
 
@@ -11,7 +12,7 @@ class TestMainApp:
     def test_root_endpoint(self, client):
         """Test the root endpoint."""
         response = client.get("/")
-        
+
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data == {"message": "Welcome to Story Teller API"}
@@ -19,7 +20,7 @@ class TestMainApp:
     def test_health_check_endpoint(self, client):
         """Test the health check endpoint."""
         response = client.get("/health")
-        
+
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data == {"status": "healthy", "database": "connected"}
@@ -28,7 +29,7 @@ class TestMainApp:
         """Test that CORS headers are properly set."""
         # Test CORS with an actual API request
         response = client.get("/api/v1/stories/")
-        
+
         # CORS headers should be present in the response
         assert response.status_code == status.HTTP_200_OK
         # FastAPI automatically adds CORS headers when middleware is configured
@@ -39,11 +40,11 @@ class TestMainApp:
         # Test OpenAPI spec
         response = client.get("/openapi.json")
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Test Swagger UI
         response = client.get("/docs")
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Test ReDoc
         response = client.get("/redoc")
         assert response.status_code == status.HTTP_200_OK

@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database.connection import create_tables
 from app.routers.stories import router as stories_router
 
-load_dotenv()  # Load environment variables from .env file  
+load_dotenv()  # Load environment variables from .env file
 
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 
@@ -52,8 +52,10 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health_check():
         """Health check endpoint for Docker healthcheck and monitoring"""
-        from app.database.connection import engine
         from sqlalchemy import text
+
+        from app.database.connection import engine
+
         try:
             # Test database connection
             with engine.connect() as connection:

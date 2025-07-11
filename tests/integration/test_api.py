@@ -1,6 +1,7 @@
 """
 Tests for Stories API endpoints.
 """
+
 import pytest
 from fastapi import status
 
@@ -11,10 +12,10 @@ class TestStoriesAPI:
     def test_create_story(self, client, sample_story_data):
         """Test creating a new story."""
         response = client.post("/api/v1/stories/", json=sample_story_data)
-        
+
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        
+
         assert data["title"] == sample_story_data["title"]
         assert data["content"] == sample_story_data["content"]
         assert data["author"] == sample_story_data["author"]
@@ -26,18 +27,14 @@ class TestStoriesAPI:
     def test_create_story_invalid_data(self, client):
         """Test creating a story with invalid data."""
         # Test empty title
-        invalid_data = {
-            "title": "",
-            "content": "Test content",
-            "author": "Test Author"
-        }
+        invalid_data = {"title": "", "content": "Test content", "author": "Test Author"}
         response = client.post("/api/v1/stories/", json=invalid_data)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
         # Test missing required field
         invalid_data = {
             "title": "Test Title",
-            "content": "Test content"
+            "content": "Test content",
             # Missing author
         }
         response = client.post("/api/v1/stories/", json=invalid_data)
@@ -46,7 +43,7 @@ class TestStoriesAPI:
     def test_get_stories_empty(self, client):
         """Test getting stories when database is empty."""
         response = client.get("/api/v1/stories/")
-        
+
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data == []
@@ -62,7 +59,7 @@ class TestStoriesAPI:
 
         # Get all stories
         response = client.get("/api/v1/stories/")
-        
+
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert len(data) == len(sample_stories_data)
@@ -125,11 +122,13 @@ class TestStoriesAPI:
         response = client.get("/api/v1/stories/?published_only=true")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        
+
         # Count published stories in sample data
-        published_count = sum(1 for story in sample_stories_data if story["is_published"])
+        published_count = sum(
+            1 for story in sample_stories_data if story["is_published"]
+        )
         assert len(data) == published_count
-        
+
         for story in data:
             assert story["is_published"] is True
 
@@ -145,7 +144,7 @@ class TestStoriesAPI:
         response = client.get(f"/api/v1/stories/{story_id}")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        
+
         assert data["id"] == story_id
         assert data["title"] == sample_story_data["title"]
         assert data["content"] == sample_story_data["content"]
@@ -164,13 +163,10 @@ class TestStoriesAPI:
         story_id = created_story["id"]
 
         # Update the story
-        update_data = {
-            "title": "Updated Title",
-            "content": "Updated content"
-        }
+        update_data = {"title": "Updated Title", "content": "Updated content"}
         response = client.put(f"/api/v1/stories/{story_id}", json=update_data)
         assert response.status_code == status.HTTP_200_OK
-        
+
         updated_story = response.json()
         assert updated_story["title"] == "Updated Title"
         assert updated_story["content"] == "Updated content"
@@ -193,7 +189,7 @@ class TestStoriesAPI:
         # Delete the story
         response = client.delete(f"/api/v1/stories/{story_id}")
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Verify it's deleted
         get_response = client.get(f"/api/v1/stories/{story_id}")
         assert get_response.status_code == status.HTTP_404_NOT_FOUND
@@ -216,7 +212,7 @@ class TestStoriesAPI:
         # Publish the story
         response = client.patch(f"/api/v1/stories/{story_id}/publish")
         assert response.status_code == status.HTTP_200_OK
-        
+
         data = response.json()
         assert data["story"]["is_published"] is True
 
@@ -233,7 +229,7 @@ class TestStoriesAPI:
         # Unpublish the story
         response = client.patch(f"/api/v1/stories/{story_id}/unpublish")
         assert response.status_code == status.HTTP_200_OK
-        
+
         data = response.json()
         assert data["story"]["is_published"] is False
 

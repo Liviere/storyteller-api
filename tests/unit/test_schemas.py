@@ -1,6 +1,7 @@
 """
 Tests for Pydantic schemas.
 """
+
 from datetime import datetime
 
 import pytest
@@ -19,11 +20,11 @@ class TestStorySchemas:
             "content": "This is test content.",
             "author": "Test Author",
             "genre": "Fiction",
-            "is_published": False
+            "is_published": False,
         }
-        
+
         story = StoryBase(**data)
-        
+
         assert story.title == "Test Story"
         assert story.content == "This is test content."
         assert story.author == "Test Author"
@@ -35,12 +36,12 @@ class TestStorySchemas:
         data = {
             "title": "Test Story",
             "content": "This is test content.",
-            "author": "Test Author"
+            "author": "Test Author",
             # genre is optional, is_published has default
         }
-        
+
         story = StoryBase(**data)
-        
+
         assert story.title == "Test Story"
         assert story.content == "This is test content."
         assert story.author == "Test Author"
@@ -51,53 +52,33 @@ class TestStorySchemas:
         """Test field validation in StoryBase."""
         # Test empty title
         with pytest.raises(ValidationError):
-            StoryBase(
-                title="",
-                content="Test content",
-                author="Test Author"
-            )
-        
+            StoryBase(title="", content="Test content", author="Test Author")
+
         # Test empty content
         with pytest.raises(ValidationError):
-            StoryBase(
-                title="Test Title",
-                content="",
-                author="Test Author"
-            )
-        
+            StoryBase(title="Test Title", content="", author="Test Author")
+
         # Test empty author
         with pytest.raises(ValidationError):
-            StoryBase(
-                title="Test Title",
-                content="Test content",
-                author=""
-            )
+            StoryBase(title="Test Title", content="Test content", author="")
 
     def test_story_base_field_length_limits(self):
         """Test field length limits in StoryBase."""
         # Test title too long (max 200 characters)
         with pytest.raises(ValidationError):
-            StoryBase(
-                title="a" * 201,
-                content="Test content",
-                author="Test Author"
-            )
-        
+            StoryBase(title="a" * 201, content="Test content", author="Test Author")
+
         # Test author too long (max 100 characters)
         with pytest.raises(ValidationError):
-            StoryBase(
-                title="Test Title",
-                content="Test content",
-                author="a" * 101
-            )
-        
+            StoryBase(title="Test Title", content="Test content", author="a" * 101)
+
         # Test genre too long (max 50 characters)
         with pytest.raises(ValidationError):
             StoryBase(
                 title="Test Title",
                 content="Test content",
                 author="Test Author",
-                genre="a" * 51
+                genre="a" * 51,
             )
 
     def test_story_create_schema(self):
@@ -106,11 +87,11 @@ class TestStorySchemas:
             "title": "Test Story",
             "content": "Test content",
             "author": "Test Author",
-            "genre": "Fiction"
+            "genre": "Fiction",
         }
-        
+
         story = StoryCreate(**data)
-        
+
         assert story.title == "Test Story"
         assert story.content == "Test content"
         assert story.author == "Test Author"
@@ -121,7 +102,7 @@ class TestStorySchemas:
         # Test updating only title
         update_data = {"title": "Updated Title"}
         story_update = StoryUpdate(**update_data)
-        
+
         assert story_update.title == "Updated Title"
         assert story_update.content is None
         assert story_update.author is None
@@ -135,11 +116,11 @@ class TestStorySchemas:
             "content": "Updated content",
             "author": "Updated Author",
             "genre": "Updated Genre",
-            "is_published": True
+            "is_published": True,
         }
-        
+
         story_update = StoryUpdate(**update_data)
-        
+
         assert story_update.title == "Updated Title"
         assert story_update.content == "Updated content"
         assert story_update.author == "Updated Author"
@@ -151,11 +132,11 @@ class TestStorySchemas:
         # Test empty title (should fail)
         with pytest.raises(ValidationError):
             StoryUpdate(title="")
-        
+
         # Test empty content (should fail)
         with pytest.raises(ValidationError):
             StoryUpdate(content="")
-        
+
         # Test empty author (should fail)
         with pytest.raises(ValidationError):
             StoryUpdate(author="")
@@ -170,11 +151,11 @@ class TestStorySchemas:
             "genre": "Fiction",
             "is_published": True,
             "created_at": datetime.now(),
-            "updated_at": datetime.now()
+            "updated_at": datetime.now(),
         }
-        
+
         story_response = StoryResponse(**data)
-        
+
         assert story_response.id == 1
         assert story_response.title == "Test Story"
         assert story_response.content == "Test content"
@@ -193,10 +174,10 @@ class TestStorySchemas:
             "author": "Test Author",
             "genre": "Fiction",
             "is_published": False,
-            "created_at": datetime.now()
+            "created_at": datetime.now(),
         }
-        
+
         story_response = StoryResponse(**data)
-        
+
         assert story_response.id == 1
         assert story_response.updated_at is None
