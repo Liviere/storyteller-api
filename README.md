@@ -1,6 +1,6 @@
 # Story Teller API
 
-REST API for managing stories built with FastAPI.
+REST API for managing stories built with FastAPI and Poetry.
 
 ## Features
 
@@ -10,13 +10,15 @@ REST API for managing stories built with FastAPI.
 - SQLite database with SQLAlchemy ORM
 - Automatic API documentation with Swagger UI
 - CORS support for frontend integration
+- Modern dependency management with Poetry
+- Development tools: Black, isort, flake8, mypy, pytest
 
 ## Quick Start
 
 ### Prerequisites
 
-- Python 3.8+
-- pip
+- Python 3.8.1+
+- Poetry (https://python-poetry.org/docs/#installation)
 
 ### Installation
 
@@ -26,37 +28,70 @@ REST API for managing stories built with FastAPI.
 cd /home/livierek/projekty/story-teller
 ```
 
-2. Create a virtual environment:
+2. Install dependencies with Poetry:
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+poetry install
 ```
 
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-4. Set up environment variables (optional):
+3. Set up environment variables (optional):
 
 ```bash
 cp .env.example .env
 # Edit .env with your preferred settings
 ```
 
-5. Run the application:
+4. Run the application:
 
 ```bash
-python main.py
+poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8080
 ```
 
 The API will be available at:
 
-- API: http://localhost:8000
-- Interactive docs (Swagger UI): http://localhost:8000/docs
-- Alternative docs (ReDoc): http://localhost:8000/redoc
+- API: http://localhost:8080
+- Interactive docs (Swagger UI): http://localhost:8080/docs
+- Alternative docs (ReDoc): http://localhost:8080/redoc
+
+## Poetry Commands
+
+### Basic Commands
+
+```bash
+# Install all dependencies
+poetry install
+
+# Add a new dependency
+poetry add package-name
+
+# Add a development dependency
+poetry add --group dev package-name
+
+# Run the application
+poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8080
+
+# Enter Poetry shell
+poetry shell
+```
+
+### Development Tools
+
+```bash
+# Format code with Black
+poetry run black .
+
+# Sort imports with isort
+poetry run isort .
+
+# Lint code with flake8
+poetry run flake8 .
+
+# Type checking with mypy
+poetry run mypy .
+
+# Run tests
+poetry run pytest
+```
 
 ## API Endpoints
 
@@ -83,7 +118,7 @@ The API will be available at:
 ### Create a Story
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/stories/" \
+curl -X POST "http://localhost:8080/api/v1/stories/" \
      -H "Content-Type: application/json" \
      -d '{
        "title": "The Adventure Begins",
@@ -97,13 +132,13 @@ curl -X POST "http://localhost:8000/api/v1/stories/" \
 ### Get All Stories
 
 ```bash
-curl "http://localhost:8000/api/v1/stories/"
+curl "http://localhost:8080/api/v1/stories/"
 ```
 
 ### Get Stories with Filters
 
 ```bash
-curl "http://localhost:8000/api/v1/stories/?genre=Fantasy&published_only=true&limit=5"
+curl "http://localhost:8080/api/v1/stories/?genre=Fantasy&published_only=true&limit=5"
 ```
 
 ## Development
@@ -113,7 +148,8 @@ curl "http://localhost:8000/api/v1/stories/?genre=Fantasy&published_only=true&li
 ```
 story-teller/
 ├── main.py                 # FastAPI application entry point
-├── requirements.txt        # Python dependencies
+├── pyproject.toml          # Poetry configuration and dependencies
+├── poetry.lock             # Poetry lock file
 ├── .env                   # Environment variables
 ├── models/                # SQLAlchemy models
 │   ├── __init__.py
@@ -129,13 +165,40 @@ story-teller/
     └── connection.py
 ```
 
-### Running in Development Mode
+### Code Quality
 
-For development with auto-reload:
+This project includes several development tools configured via Poetry:
+
+- **Black**: Code formatter for consistent code style
+- **isort**: Import sorter for organized imports
+- **flake8**: Linter for code quality checks
+- **mypy**: Static type checker
+- **pytest**: Testing framework
+
+Run all quality checks:
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+poetry run black .
+poetry run isort .
+poetry run flake8 .
+poetry run mypy .
+poetry run pytest
 ```
+
+### VS Code Tasks
+
+The project includes predefined VS Code tasks:
+
+- Run FastAPI Development Server (Poetry)
+- Poetry: Install Dependencies
+- Poetry: Add Dependency
+- Poetry: Format Code (Black)
+- Poetry: Sort Imports (isort)
+- Poetry: Lint Code (flake8)
+- Poetry: Type Check (mypy)
+- Poetry: Run Tests
+
+Access these via `Ctrl+Shift+P` > "Tasks: Run Task"
 
 ## Database
 

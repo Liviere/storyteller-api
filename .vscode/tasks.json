@@ -2,12 +2,97 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Run FastAPI Development Server",
+			"label": "Run FastAPI Development Server (Poetry)",
 			"type": "shell",
-			"command": "source venv/bin/activate && uvicorn main:app --reload --host 0.0.0.0 --port 8080",
+			"command": "poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8080",
 			"group": "build",
 			"isBackground": true,
 			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Install Dependencies",
+			"type": "shell",
+			"command": "poetry install",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Add Dependency",
+			"type": "shell",
+			"command": "poetry add ${input:packageName}",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Format Code (Black)",
+			"type": "shell",
+			"command": "poetry run black .",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Sort Imports (isort)",
+			"type": "shell",
+			"command": "poetry run isort .",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Lint Code (flake8)",
+			"type": "shell",
+			"command": "poetry run flake8 .",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Type Check (mypy)",
+			"type": "shell",
+			"command": "poetry run mypy .",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Tests",
+			"type": "shell",
+			"command": "poetry run pytest",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Check Outdated Packages",
+			"type": "shell",
+			"command": "poetry show --outdated",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Update All Dependencies",
+			"type": "shell",
+			"command": "poetry update",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Update Core Dependencies (Priority)",
+			"type": "shell",
+			"command": "poetry update fastapi sqlalchemy pydantic uvicorn",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Update with Priority Script",
+			"type": "shell",
+			"command": "./update_dependencies.sh",
+			"group": "build",
+			"problemMatcher": []
+		}
+	],
+	"inputs": [
+		{
+			"id": "packageName",
+			"description": "Package name to add",
+			"default": "fastapi",
+			"type": "promptString"
 		}
 	]
 }
