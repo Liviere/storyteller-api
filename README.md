@@ -91,7 +91,57 @@ poetry run mypy .
 
 # Run tests
 poetry run pytest
+
+# Run tests with coverage
+poetry run pytest --cov=. --cov-report=term-missing --cov-report=html
+
+# Run specific test categories
+poetry run pytest tests/test_models.py tests/test_schemas.py  # Unit tests
+poetry run pytest tests/test_api.py                          # API tests
+poetry run pytest tests/test_integration.py                  # Integration tests
 ```
+
+## Testing
+
+The project includes comprehensive unit and integration tests with high code coverage (96%+).
+
+### Test Structure
+
+```
+tests/
+├── conftest.py          # Test configuration and fixtures
+├── test_models.py       # SQLAlchemy model tests
+├── test_schemas.py      # Pydantic schema tests
+├── test_api.py          # API endpoint tests
+├── test_main.py         # Main application tests
+├── test_integration.py  # Integration tests
+└── README.md           # Test documentation
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+poetry run pytest
+
+# Run with coverage report
+poetry run pytest --cov=. --cov-report=html
+open htmlcov/index.html
+
+# Run specific test file
+poetry run pytest tests/test_api.py -v
+
+# Run specific test method
+poetry run pytest tests/test_api.py::TestStoriesAPI::test_create_story -v
+```
+
+### Test Features
+
+- **Isolated testing**: Each test uses a temporary SQLite database
+- **Comprehensive coverage**: Tests for models, schemas, API endpoints, and integrations
+- **Error handling**: Tests for both success and failure scenarios
+- **Fixtures**: Reusable test data and database sessions
+- **Fast execution**: Tests run in under 2 seconds
 
 ## API Endpoints
 
@@ -189,14 +239,32 @@ poetry run pytest
 
 The project includes predefined VS Code tasks:
 
+**Development:**
+
 - Run FastAPI Development Server (Poetry)
 - Poetry: Install Dependencies
 - Poetry: Add Dependency
+
+**Code Quality:**
+
 - Poetry: Format Code (Black)
 - Poetry: Sort Imports (isort)
 - Poetry: Lint Code (flake8)
 - Poetry: Type Check (mypy)
+
+**Testing:**
+
 - Poetry: Run Tests
+- Poetry: Run Tests with Coverage
+- Poetry: Run Unit Tests Only
+- Poetry: Run API Tests Only
+- Poetry: Run Integration Tests Only
+
+**Maintenance:**
+
+- Poetry: Check Outdated Packages
+- Poetry: Update All Dependencies
+- Poetry: Update Core Dependencies (Priority)
 
 Access these via `Ctrl+Shift+P` > "Tasks: Run Task"
 

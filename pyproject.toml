@@ -21,6 +21,7 @@ alembic = "^1.16.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.0"
 pytest-asyncio = "^1.0.0"
+pytest-cov = "^6.0.0"
 httpx = "^0.28.0"
 black = "^25.1.0"
 isort = "^6.0.0"
@@ -60,3 +61,37 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short"
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests", 
+    "slow: Slow running tests"
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    "__pycache__/*",
+    "*.pyc",
+    ".venv/*",
+    "venv/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError"
+]

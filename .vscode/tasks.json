@@ -59,6 +59,34 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "Poetry: Run Tests with Coverage",
+			"type": "shell",
+			"command": "poetry run pytest --cov=. --cov-report=term-missing --cov-report=html",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Unit Tests Only",
+			"type": "shell",
+			"command": "poetry run pytest tests/test_models.py tests/test_schemas.py tests/test_main.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run API Tests Only",
+			"type": "shell",
+			"command": "poetry run pytest tests/test_api.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Integration Tests Only",
+			"type": "shell",
+			"command": "poetry run pytest tests/test_integration.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
 			"label": "Poetry: Check Outdated Packages",
 			"type": "shell",
 			"command": "poetry show --outdated",
