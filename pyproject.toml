@@ -87,13 +87,34 @@ omit = [
     "__pycache__/*",
     "*.pyc",
     ".venv/*",
-    "venv/*"
+    "venv/*",
+    "htmlcov/*",
+    "reports/*",
+    "logs/*",
+    "performance_tests/*",
+    "migrate_to_mysql.py",
+    "docker-setup.sh",
+    "update_dependencies.sh",
+    "init-scripts/*",
+    "Dockerfile",
+    "docker-compose*.yml",
+    "*.db",
+    ".coverage"
 ]
 
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
+    "def __str__",
     "raise AssertionError",
-    "raise NotImplementedError"
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod"
 ]
+show_missing = true
+precision = 2
+skip_covered = false
+skip_empty = true
