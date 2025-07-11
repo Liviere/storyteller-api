@@ -163,6 +163,141 @@
 			"command": "poetry run locust -f performance_tests/locustfile.py --host=http://localhost:8080 --headless --users 30 --spawn-rate 3 --run-time 30m --html reports/endurance_test_report.html",
 			"group": "test",
 			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Start Services",
+			"type": "shell",
+			"command": "./docker-setup.sh start",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true
+			}
+		},
+		{
+			"label": "Docker: Stop Services",
+			"type": "shell",
+			"command": "./docker-setup.sh stop",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Restart Services",
+			"type": "shell",
+			"command": "./docker-setup.sh restart",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Build Application",
+			"type": "shell",
+			"command": "./docker-setup.sh build",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Show Logs",
+			"type": "shell",
+			"command": "./docker-setup.sh logs",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Docker: Connect to MySQL",
+			"type": "shell",
+			"command": "./docker-setup.sh mysql",
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Docker: Migrate from SQLite",
+			"type": "shell",
+			"command": "./docker-setup.sh migrate",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker: Clean All (⚠️ Removes Data)",
+			"type": "shell",
+			"command": "./docker-setup.sh clean",
+			"group": "build",
+			"problemMatcher": [],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Docker Test: Start Test Database",
+			"type": "shell",
+			"command": "docker-compose -f docker-compose.test.yml up -d",
+			"group": "test",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker Test: Stop Test Database",
+			"type": "shell",
+			"command": "docker-compose -f docker-compose.test.yml down",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Docker Test: Clean Test Database",
+			"type": "shell",
+			"command": "docker-compose -f docker-compose.test.yml down -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Test: Run with MySQL Test Database",
+			"type": "shell",
+			"command": "TEST_DATABASE_URL=\"mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test\" poetry run pytest tests/ -v",
+			"group": "test",
+			"dependsOn": "Docker Test: Start Test Database",
+			"problemMatcher": []
+		},
+		{
+			"label": "Complete: Start Development Environment",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"Docker: Start Services",
+				"Run FastAPI Development Server (Poetry)"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Complete: Full Test Suite with MySQL",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"Docker Test: Start Test Database",
+				"Test: Run with MySQL Test Database",
+				"Docker Test: Clean Test Database"
+			],
+			"group": "test",
+			"problemMatcher": []
 		}
 	],
 	"inputs": [
