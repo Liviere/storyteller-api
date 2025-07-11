@@ -8,29 +8,40 @@ This directory contains comprehensive unit and integration tests for the Story T
 tests/
 ├── __init__.py              # Package marker
 ├── conftest.py             # Test configuration and fixtures
-├── test_models.py          # Tests for SQLAlchemy models
-├── test_schemas.py         # Tests for Pydantic schemas
-├── test_api.py             # Tests for API endpoints
-├── test_main.py            # Tests for main application
-├── test_integration.py     # Integration tests
-└── README.md              # This file
+├── README.md              # This file
+├── unit/                  # Unit tests
+│   ├── __init__.py
+│   ├── test_models.py     # Tests for SQLAlchemy models
+│   ├── test_schemas.py    # Tests for Pydantic schemas
+│   └── test_main.py       # Tests for main application
+├── integration/           # Integration tests
+│   ├── __init__.py
+│   ├── test_api.py        # Tests for API endpoints
+│   └── test_integration.py # End-to-end workflow tests
+└── performance/           # Performance tests
+    ├── __init__.py
+    ├── locustfile.py      # Locust performance test scenarios
+    ├── config.py          # Performance test configuration
+    └── README.md          # Performance testing documentation
 ```
 
 ## Test Categories
 
-### Unit Tests
+### Unit Tests (`tests/unit/`)
 
 - **test_models.py**: Tests for SQLAlchemy models including validation, relationships, and database operations
 - **test_schemas.py**: Tests for Pydantic schemas including validation and serialization
 - **test_main.py**: Tests for main application endpoints and configuration
 
-### API Tests
+### Integration Tests (`tests/integration/`)
 
 - **test_api.py**: Comprehensive tests for all story-related API endpoints including CRUD operations, filtering, and error handling
-
-### Integration Tests
-
 - **test_integration.py**: End-to-end tests that verify complete workflows and component interactions
+
+### Performance Tests (`tests/performance/`)
+
+- **locustfile.py**: Locust-based load testing scenarios with realistic user behavior simulation
+- **config.py**: Configuration for different performance test scenarios
 
 ## Running Tests
 
@@ -48,13 +59,14 @@ poetry run pytest
 
 ```bash
 # Run only unit tests
-poetry run pytest tests/test_models.py tests/test_schemas.py tests/test_main.py
-
-# Run only API tests
-poetry run pytest tests/test_api.py
+poetry run pytest tests/unit/ -v
 
 # Run only integration tests
-poetry run pytest tests/test_integration.py
+poetry run pytest tests/integration/ -v
+
+# Run specific test files
+poetry run pytest tests/unit/test_models.py -v
+poetry run pytest tests/integration/test_api.py -v
 ```
 
 ### Run Tests with Coverage
@@ -77,10 +89,10 @@ poetry run pytest -v
 
 ```bash
 # Run a specific test class
-poetry run pytest tests/test_api.py::TestStoriesAPI
+poetry run pytest tests/integration/test_api.py::TestStoriesAPI
 
 # Run a specific test method
-poetry run pytest tests/test_api.py::TestStoriesAPI::test_create_story
+poetry run pytest tests/integration/test_api.py::TestStoriesAPI::test_create_story
 ```
 
 ## Test Fixtures

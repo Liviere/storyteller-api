@@ -261,7 +261,7 @@ The project includes comprehensive performance tests using Locust to simulate re
 ### Performance Test Structure
 
 ```
-performance_tests/
+tests/performance/
 ├── __init__.py          # Package marker
 ├── locustfile.py        # Main Locust test scenarios
 ├── config.py            # Test configurations
@@ -372,7 +372,9 @@ story-teller/
 │       ├── __init__.py
 │       └── connection.py
 ├── tests/                 # Test suite
-├── performance_tests/     # Performance testing with Locust
+│   ├── unit/              # Unit tests (models, schemas, core logic)
+│   ├── integration/       # Integration tests (API endpoints, workflows)
+│   └── performance/       # Performance testing with Locust
 └── docker-compose.yml     # Docker configuration
 ```
 

@@ -111,7 +111,7 @@ poetry run locust --host=http://localhost:8080 --headless --users 50 --spawn-rat
 poetry run locust --host=http://localhost:8080 --headless --users 50 --spawn-rate 5 --run-time 2m --csv=results
 
 # Specify locustfile explicitly
-poetry run locust -f performance_tests/locustfile.py --host=http://localhost:8080
+poetry run locust -f tests/performance/locustfile.py --host=http://localhost:8080
 ```
 
 ## Test Data
