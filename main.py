@@ -36,7 +36,16 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    """Health check endpoint for Docker healthcheck and monitoring"""
+    from database.connection import engine
+    from sqlalchemy import text
+    try:
+        # Test database connection
+        with engine.connect() as connection:
+            connection.scalar(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ class TestMainApp:
         
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data == {"status": "healthy"}
+        assert data == {"status": "healthy", "database": "connected"}
 
     def test_cors_headers(self, client):
         """Test that CORS headers are properly set."""
