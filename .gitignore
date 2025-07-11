@@ -156,3 +156,8 @@ Thumbs.db
 
 # User Notes
 notes.txt
+
+# Locust performance test reports
+reports/*.html
+reports/*.csv
+reports/*.xml

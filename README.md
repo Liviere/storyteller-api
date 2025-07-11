@@ -143,6 +143,50 @@ poetry run pytest tests/test_api.py::TestStoriesAPI::test_create_story -v
 - **Fixtures**: Reusable test data and database sessions
 - **Fast execution**: Tests run in under 2 seconds
 
+## Performance Testing
+
+The project includes comprehensive performance tests using Locust to simulate realistic API usage patterns.
+
+### Performance Test Structure
+
+```
+performance_tests/
+├── __init__.py          # Package marker
+├── locustfile.py        # Main Locust test scenarios
+├── config.py            # Test configurations
+└── README.md            # Performance testing documentation
+```
+
+### Running Performance Tests
+
+```bash
+# Start the API server first
+poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8080
+
+# Start Locust web interface
+poetry run locust --host=http://localhost:8080
+# Then open http://localhost:8089
+
+# Or run predefined test scenarios
+poetry run locust --host=http://localhost:8080 --headless --users 50 --spawn-rate 5 --run-time 2m --html reports/load_test.html
+```
+
+### Test Scenarios
+
+- **Light Load Test**: 10 users, 2m duration - for development
+- **Medium Load Test**: 50 users, 5m duration - for staging
+- **Heavy Load Test**: 200 users, 10m duration - for production readiness
+- **Stress Test**: 500 users, 5m duration - to find system limits
+- **Spike Test**: 100 users, fast spawn - for sudden traffic increases
+- **Endurance Test**: 30 users, 30m duration - for long-term stability
+
+### User Types Simulated
+
+- **StoryReaderUser**: Regular users who primarily read stories (most common)
+- **StoryWriterUser**: Content creators who write and manage stories
+- **AdminUser**: Administrative users performing bulk operations
+- **HealthCheckUser**: Monitoring systems with regular health checks
+
 ## API Endpoints
 
 ### Stories
@@ -259,6 +303,16 @@ The project includes predefined VS Code tasks:
 - Poetry: Run Unit Tests Only
 - Poetry: Run API Tests Only
 - Poetry: Run Integration Tests Only
+
+**Performance Testing:**
+
+- Locust: Start Web Interface
+- Locust: Light Load Test
+- Locust: Medium Load Test
+- Locust: Heavy Load Test
+- Locust: Stress Test
+- Locust: Spike Test
+- Locust: Endurance Test
 
 **Maintenance:**
 
