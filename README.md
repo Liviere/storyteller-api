@@ -9,6 +9,7 @@ REST API for managing stories built with FastAPI and Poetry.
 - Publish/unpublish stories
 - **MySQL database with SQLAlchemy ORM (with Docker support)**
 - **SQLite fallback for development**
+- **Error monitoring and tracking with Sentry**
 - Automatic API documentation with Swagger UI
 - CORS support for frontend integration
 - Modern dependency management with Poetry
@@ -441,9 +442,44 @@ To use a different database, update the `DATABASE_URL` in your `.env` file.
 ## Environment Variables
 
 - `DATABASE_URL`: Database connection string (default: sqlite:///./stories.db)
+- `SENTRY_DSN`: Sentry DSN for error monitoring (optional)
 - `SECRET_KEY`: Secret key for JWT tokens
 - `DEBUG`: Enable debug mode (default: True)
 - `ENVIRONMENT`: Environment name (default: development)
+
+## Monitoring
+
+The application includes comprehensive error monitoring and performance tracking using Sentry.
+
+### Error Monitoring Features
+
+- **Real-time error tracking**: Automatic capture and reporting of exceptions
+- **Performance monitoring**: Track API response times and database queries
+- **User context**: Capture request headers and user data for debugging
+- **Environment-based configuration**: Different Sentry projects for development/production
+
+### Sentry Configuration
+
+To enable Sentry monitoring, set the `SENTRY_DSN` environment variable:
+
+```bash
+# In your .env file
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+```
+
+When configured, Sentry will automatically:
+
+- Capture all unhandled exceptions
+- Track API endpoint performance
+- Monitor database connection issues
+- Provide detailed error context and stack traces
+
+### Monitoring Best Practices
+
+- Use different Sentry projects for development, staging, and production
+- Set up alerts for critical errors and performance degradation
+- Review error trends and fix issues proactively
+- Use Sentry's release tracking to monitor deployment impact
 
 ## License
 

@@ -1,8 +1,24 @@
+import os
+
+import sentry_sdk
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database.connection import create_tables
 from routers.stories import router as stories_router
+
+load_dotenv()  # Load environment variables from .env file  
+
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,  # Sentry DSN from environment variable
+        # Add data like request headers and IP for users,
+        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+        send_default_pii=True,
+    )
 
 app = FastAPI(
     title="Story Teller API",
