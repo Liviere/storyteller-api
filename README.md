@@ -7,6 +7,12 @@ REST API for managing stories built with FastAPI and Poetry.
 - Create, read, update, and delete stories
 - Filter stories by genre, author, and publication status
 - Publish/unpublish stories
+- **AI-powered story generation with LLM integration**
+- **Story analysis (sentiment, genre classification, comprehensive analysis)**
+- **Story summarization with customizable length and focus**
+- **Story improvement (grammar, style, general quality enhancement)**
+- **Support for multiple LLM providers (OpenAI, DeepInfra, Any OpenAI-compatible API)**
+- **LLM usage statistics and health monitoring**
 - **MySQL database with SQLAlchemy ORM (with Docker support)**
 - **SQLite fallback for development**
 - **Error monitoring and tracking with Sentry**
@@ -146,6 +152,51 @@ poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8080
 
 # Enter Poetry shell
 poetry shell
+```
+
+## LLM Configuration
+
+The application supports multiple LLM providers for AI-powered story generation and text processing.
+
+### Quick LLM Setup
+
+1. Copy the LLM configuration template:
+
+```bash
+cp llm_config.example.yaml llm_config.yaml
+```
+
+2. Edit `llm_config.yaml` with your preferred provider settings:
+
+3. Set your API keys in environment variables (optional):
+
+```bash
+export OPENAI_API_KEY="your-api-key"
+export DEEPINFRA_API_KEY="your-deepinfra-key"
+```
+
+### Supported LLM Providers
+
+- **OpenAI** - GPT models (requires API key)
+- **DeepInfra** - Hosted open-source models (requires API key)
+- **Custom endpoints** - Any OpenAI-compatible API
+
+### LLM API Endpoints
+
+- **Health check**: `GET /api/v1/llm/health`
+- **Generate story**: `POST /api/v1/llm/generate`
+- **Analyze text**: `POST /api/v1/llm/analyze`
+- **Summarize content**: `POST /api/v1/llm/summarize`
+- **Improve story**: `POST /api/v1/llm/improve`
+- **Available models**: `GET /api/v1/llm/models`
+- **Usage statistics**: `GET /api/v1/llm/stats`
+
+### Testing LLM Integration
+
+Test the LLM functionality without API keys:
+
+```bash
+python test_llm.py
 ```
 
 ### Development Tools
@@ -310,6 +361,16 @@ poetry run locust --host=http://localhost:8080 --headless --users 50 --spawn-rat
 - `PATCH /api/v1/stories/{story_id}/publish` - Publish a story
 - `PATCH /api/v1/stories/{story_id}/unpublish` - Unpublish a story
 
+### LLM & AI Features
+
+- `GET /api/v1/llm/health` - Check LLM service health and available models
+- `POST /api/v1/llm/generate` - Generate story content using AI
+- `POST /api/v1/llm/analyze` - Analyze text content (sentiment, genre, comprehensive)
+- `POST /api/v1/llm/summarize` - Create story summaries with customizable length
+- `POST /api/v1/llm/improve` - Improve story quality (grammar, style, general)
+- `GET /api/v1/llm/models` - Get list of available LLM models
+- `GET /api/v1/llm/stats` - Get LLM usage statistics and metrics
+
 ### Query Parameters for GET /api/v1/stories/
 
 - `skip` (int): Number of stories to skip (default: 0)
@@ -346,6 +407,52 @@ curl "http://localhost:8080/api/v1/stories/"
 curl "http://localhost:8080/api/v1/stories/?genre=Fantasy&published_only=true&limit=5"
 ```
 
+### AI Story Generation
+
+```bash
+# Generate a fantasy story
+curl -X POST "http://localhost:8080/api/v1/llm/generate" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "prompt": "A brave knight discovers a hidden magical forest",
+       "genre": "fantasy",
+       "length": "short",
+       "style": "engaging"
+     }'
+
+# Analyze story content
+curl -X POST "http://localhost:8080/api/v1/llm/analyze" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "content": "Your story text here...",
+       "analysis_type": "sentiment"
+     }'
+
+# Summarize a story
+curl -X POST "http://localhost:8080/api/v1/llm/summarize" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "content": "Long story content here...",
+       "summary_length": "brief",
+       "focus": "plot"
+     }'
+
+# Improve story quality
+curl -X POST "http://localhost:8080/api/v1/llm/improve" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "content": "Story to improve...",
+       "improvement_type": "grammar",
+       "target_audience": "adult"
+     }'
+
+# Check LLM health and available models
+curl "http://localhost:8080/api/v1/llm/health"
+
+# Get usage statistics
+curl "http://localhost:8080/api/v1/llm/stats"
+```
+
 ## Development
 
 ### Project Structure
@@ -356,6 +463,8 @@ story-teller/
 ├── pyproject.toml          # Poetry configuration and dependencies
 ├── poetry.lock             # Poetry lock file
 ├── .env                   # Environment variables
+├── llm_config.yaml        # LLM providers configuration
+├── test_llm.py            # LLM integration testing script
 ├── app/                   # Main application package
 │   ├── __init__.py
 │   ├── main.py            # FastAPI app creation and configuration
@@ -367,7 +476,15 @@ story-teller/
 │   │   └── story.py
 │   ├── routers/           # API route handlers
 │   │   ├── __init__.py
-│   │   └── stories.py
+│   │   ├── stories.py
+│   │   └── llm.py         # LLM API endpoints
+│   ├── llm/               # LLM integration module
+│   │   ├── __init__.py
+│   │   ├── config.py      # LLM configuration management
+│   │   ├── models.py      # LLM data models
+│   │   ├── services.py    # LLM service implementations
+│   │   ├── chains.py      # LangChain processing chains
+│   │   └── prompts.py     # Prompt templates
 │   └── database/          # Database configuration
 │       ├── __init__.py
 │       └── connection.py
@@ -449,11 +566,20 @@ To use a different database, update the `DATABASE_URL` in your `.env` file.
 
 ## Environment Variables
 
+### Core Application
+
 - `DATABASE_URL`: Database connection string (default: sqlite:///./stories.db)
 - `SENTRY_DSN`: Sentry DSN for error monitoring (optional)
 - `SECRET_KEY`: Secret key for JWT tokens
 - `DEBUG`: Enable debug mode (default: True)
 - `ENVIRONMENT`: Environment name (default: development)
+
+### LLM Integration
+
+- `OPENAI_API_KEY`: OpenAI API key for GPT models (optional)
+- `DEEPINFRA_API_KEY`: DeepInfra API key for hosted models (optional)
+- `CUSTOM_LLM_API_KEY`: Custom LLM API key for OpenAI-compatible APIs (optional)
+- `CUSTOM_LLM_BASE_URL`: Base URL for custom LLM API (optional)
 
 ## Monitoring
 
