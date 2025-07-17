@@ -1,0 +1,190 @@
+# LLM Configuration
+# This file defines available models, providers, and task assignments
+
+# Model Providers Configuration
+providers:
+  openai:
+    name: 'OpenAI'
+    api_key_env: 'OPENAI_API_KEY'
+    base_url: 'https://api.openai.com/v1'
+    requires_api_key: true
+
+  ollama:
+    name: 'Ollama'
+    base_url_env: 'OLLAMA_BASE_URL'
+    default_base_url: 'http://localhost:11434'
+    requires_api_key: false
+
+  lm_studio:
+    name: 'LM Studio'
+    base_url_env: 'LM_STUDIO_BASE_URL'
+    default_base_url: 'http://localhost:1234'
+    requires_api_key: false
+
+  deepinfra:
+    name: 'DeepInfra'
+    api_key_env: 'DEEPINFRA_API_KEY'
+    base_url: 'https://api.deepinfra.com/v1/openai'
+    requires_api_key: true
+
+  custom_openai_compatible:
+    name: 'Custom OpenAI Compatible'
+    api_key_env: 'CUSTOM_LLM_API_KEY'
+    base_url_env: 'CUSTOM_LLM_BASE_URL'
+    default_base_url: 'http://localhost:8000'
+    requires_api_key: false
+
+# Available Models Configuration
+models:
+  # OpenAI Models
+  gpt-4.1:
+    provider: 'openai'
+    display_name: 'GPT-4.1'
+    description: 'Most capable model for complex tasks'
+    max_tokens: 8192
+    temperature: 0.7
+
+  gpt-4.1-mini:
+    provider: 'openai'
+    display_name: 'GPT-4.1 Mini'
+    description: 'Affordable and intelligent small model'
+    max_tokens: 8192
+    temperature: 0.7
+
+  gpt-4.1-nano:
+    provider: 'openai'
+    display_name: 'GPT-4.1 Nano'
+    description: 'Fast and efficient for most tasks'
+    max_tokens: 4096
+    temperature: 0.7
+
+  # Ollama Models (Local)
+  llama3.2:3b:
+    provider: 'ollama'
+    display_name: 'Llama 3.2 3B'
+    description: 'Small, fast Llama model'
+    max_tokens: 2048
+    temperature: 0.7
+
+  llama3.2:8b:
+    provider: 'ollama'
+    display_name: 'Llama 3.2 8B'
+    description: 'Balanced Llama model'
+    max_tokens: 2048
+    temperature: 0.7
+
+  mistral:7b:
+    provider: 'ollama'
+    display_name: 'Mistral 7B'
+    description: 'Efficient open-source model'
+    max_tokens: 8192
+    temperature: 0.7
+
+  codellama:7b:
+    provider: 'ollama'
+    display_name: 'Code Llama 7B'
+    description: 'Specialized for code generation'
+    max_tokens: 4096
+    temperature: 0.1
+
+  # DeepInfra Models
+  meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8:
+    provider: 'deepinfra'
+    display_name: 'Llama 4 Maverick (DeepInfra)'
+    description: 'Llama 4 Maverick  hosted on DeepInfra'
+    max_tokens: 1048576
+    temperature: 0.7
+
+  deepseek-ai/DeepSeek-R1-0528:
+    provider: 'deepinfra'
+    display_name: 'DeepSeek R1 0528 (DeepInfra)'
+    description: 'DeepSeek R1 0528 hosted on DeepInfra'
+    max_tokens: 8192
+    temperature: 0.7
+
+  deepseek-ai/DeepSeek-V3-0324:
+    provider: 'deepinfra'
+    display_name: 'DeepSeek V3 0324 (DeepInfra)'
+    description: 'DeepSeek
+    max_tokens: 8192
+    temperature: 0.7
+
+  google/gemma-3-27b-it:
+    provider: 'deepinfra'
+    display_name: 'Gemma 3 27B IT (DeepInfra)'
+    description: 'Gemma 3 27B IT hosted on DeepInfra'
+    max_tokens: 8192
+    temperature: 0.7
+
+  google/gemma-3-12b-it:
+    provider: 'deepinfra'
+    display_name: 'Gemma 3 12B IT (DeepInfra)'
+    description: 'Gemma 3 12B IT hosted on DeepInfra'
+    max_tokens: 8192
+    temperature: 0.7
+
+  google/gemma-3-4b-it:
+    provider: 'deepinfra'
+    display_name: 'Gemma 3 4B IT (DeepInfra)'
+    description: 'Gemma 3 4B IT hosted on DeepInfra'
+    max_tokens: 8192
+    temperature: 0.7
+
+# Task Model Assignments
+tasks:
+  story_generation:
+    primary: 'gpt-4.1-mini'
+    fallback: ['meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8', 'llama3.2:8b']
+    description: 'Models optimized for creative writing'
+
+  analysis:
+    primary: 'gpt-4.1-mini'
+    fallback: ['meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8', 'llama3.2:8b']
+    description: 'Models good at text analysis'
+
+  summarization:
+    primary: 'gpt-4.1-nano'
+    fallback: ['google/gemma-3-12b-it', 'llama3.2:3b']
+    description: 'Models efficient at summarization'
+
+  translation:
+    primary: 'gpt-4.1'
+    fallback: ['deepseek-ai/DeepSeek-V3-0324']
+    description: 'Models with strong multilingual capabilities'
+
+  improvement:
+    primary: 'deepseek-ai/DeepSeek-R1-0528'
+    fallback: ['gpt-4.1']
+    description: 'High-quality models for text improvement'
+
+  code_generation:
+    primary: 'codellama:7b'
+    fallback: ['gpt-4.1', 'deepseek-ai/DeepSeek-V3-0324']
+    description: 'Models specialized in code generation'
+
+# General Settings
+settings:
+  enable_caching: true
+  cache_ttl_seconds: 3600
+  max_concurrent_requests: 5
+  enable_monitoring: true
+  default_timeout: 60
+  retry_attempts: 3
+  retry_delay: 1.0
+
+  # Rate limiting
+  rate_limit_requests_per_minute: 60
+  rate_limit_tokens_per_minute: 90000
+
+  # Safety settings
+  max_prompt_length: 64000
+  max_response_length: 4096
+  content_filter_enabled: true
+
+  # Environment variable overrides
+  env_overrides:
+    story_model: 'LLM_STORY_MODEL'
+    analysis_model: 'LLM_ANALYSIS_MODEL'
+    summary_model: 'LLM_SUMMARY_MODEL'
+    translation_model: 'LLM_TRANSLATION_MODEL'
+    improvement_model: 'LLM_IMPROVEMENT_MODEL'

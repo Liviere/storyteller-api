@@ -163,3 +163,6 @@ notes.txt
 reports/performance/*.html
 reports/performance/*.csv
 reports/performance/*.xml
+
+# LLM Config
+llm_config.yaml
