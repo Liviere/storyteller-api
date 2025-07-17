@@ -8,8 +8,7 @@ This module provides Large Language Model capabilities for:
 - Text transformation and improvement
 - Multilingual support
 
-The module is designed to work with OpenAI-compatible models,
-including open source alternatives like Ollama, LM Studio, etc.
+The module is designed to work with OpenAI-compatible models
 """
 
 # Import will be available after installing dependencies
