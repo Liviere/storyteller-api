@@ -94,26 +94,31 @@ tasks:
   story_generation:
     primary: 'gpt-4.1-mini'
     fallback: ['meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8']
+    testing:  ['gpt-4.1-nano', 'google/gemma-3-4b-it']
     description: 'Models optimized for creative writing'
 
   analysis:
     primary: 'gpt-4.1-mini'
     fallback: ['meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8']
+    testing:  ['gpt-4.1-nano', 'google/gemma-3-4b-it']
     description: 'Models good at text analysis'
 
   summarization:
     primary: 'gpt-4.1-nano'
     fallback: ['google/gemma-3-12b-it']
+    testing:  ['gpt-4.1-nano', 'google/gemma-3-4b-it']
     description: 'Models efficient at summarization'
 
   translation:
     primary: 'gpt-4.1'
     fallback: ['deepseek-ai/DeepSeek-V3-0324']
+    testing:  ['gpt-4.1-nano', 'google/gemma-3-4b-it']
     description: 'Models with strong multilingual capabilities'
 
   improvement:
     primary: 'deepseek-ai/DeepSeek-R1-0528'
     fallback: ['gpt-4.1']
+    testing:  ['gpt-4.1-nano', 'google/gemma-3-4b-it']
     description: 'High-quality models for text improvement'
 
   code_generation:

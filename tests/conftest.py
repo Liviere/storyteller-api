@@ -15,6 +15,8 @@ from app.database.connection import get_db
 from app.models.story import Base
 from main import app
 
+# Import LLM-specific fixtures
+pytest_plugins = ["tests.llm.conftest_llm"]
 
 def get_test_database_url():
     """Get test database URL based on environment."""
@@ -27,7 +29,6 @@ def get_test_database_url():
     temp_file = tempfile.NamedTemporaryFile(delete=False)
     temp_file.close()
     return f"sqlite:///{temp_file.name}"
-
 
 @pytest.fixture
 def temp_db():
