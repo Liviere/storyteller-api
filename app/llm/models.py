@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 from .config import LLMConfig, ModelConfig, ModelProvider
 
@@ -93,8 +94,9 @@ class LLMModelFactory:
             return None
 
         try:
+            api_key = SecretStr(config.api_key) if config.api_key else None
             return ChatOpenAI(
-                model_name=config.name, openai_api_key=config.api_key, **params
+                model=config.name, api_key=api_key, **params
             )
         except Exception as e:
             logger.error(f"Failed to create OpenAI model: {str(e)}")
@@ -105,11 +107,12 @@ class LLMModelFactory:
     ) -> Optional[ChatOpenAI]:
         """Create OpenAI-compatible model instance (LM Studio, etc.)"""
         try:
+            api_key_str = config.api_key or "not-needed"
+            api_key = SecretStr(api_key_str)
             return ChatOpenAI(
-                model_name=config.name,
-                openai_api_base=config.base_url,
-                openai_api_key=config.api_key
-                or "not-needed",  # Some endpoints don't require API key
+                model=config.name,
+                base_url=config.base_url,
+                api_key=api_key,
                 **params,
             )
         except Exception as e:
