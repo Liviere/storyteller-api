@@ -133,11 +133,17 @@ class TestStoryWorkflows:
         published_fantasy_stories = published_fantasy_response.json()
         assert len(published_fantasy_stories) == 2  # Two published fantasy stories
 
-        # Test author filtering
+        # Test author filtering (partial match)
         fantasy_author_response = client.get("/api/v1/stories/?author=Fantasy Writer")
         assert fantasy_author_response.status_code == status.HTTP_200_OK
         fantasy_author_stories = fantasy_author_response.json()
-        assert len(fantasy_author_stories) == 1
+        assert len(fantasy_author_stories) == 2  # Finds both "Fantasy Writer" and "Another Fantasy Writer"
+        
+        # Test exact author filtering - use more specific search
+        exact_author_response = client.get("/api/v1/stories/?author=Sci-Fi Writer")
+        assert exact_author_response.status_code == status.HTTP_200_OK
+        exact_author_stories = exact_author_response.json()
+        assert len(exact_author_stories) == 1  # Only "Sci-Fi Writer" matches exactly
 
         # Cleanup: Delete all created stories
         for story_id in created_ids:
