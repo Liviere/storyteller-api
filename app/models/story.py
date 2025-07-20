@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -6,8 +7,12 @@ from sqlalchemy.sql import func
 
 Base = declarative_base()
 
+if TYPE_CHECKING:
+    # Import for type checking only
+    from sqlalchemy.ext.declarative import DeclarativeMeta
 
-class Story(Base):
+
+class Story(Base):  # type: ignore[misc,valid-type]
     __tablename__ = "stories"
 
     # Add MySQL-specific table options
