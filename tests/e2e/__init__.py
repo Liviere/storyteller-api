@@ -1,1 +1,1 @@
-# End-to-end tests package
+# Performance tests package

@@ -1,14 +1,158 @@
-# Performance Tests for Story Teller API
+# End-to-End Tests
 
-This directory contains Locust-based performance tests for the Story Teller API.
+This directory contains end-to-end (E2E) tests and performance tests for the Story Teller API.
 
-## Prerequisites
+## Structure
 
-Make sure you have installed all dependencies:
+```
+tests/e2e/
+├── __init__.py              # Package initialization
+├── README.md               # This file
+├── test_workflows.py       # Complete workflow tests
+├── locustfile.py          # Performance/load testing with Locust
+└── config.py              # Performance test configuration
+```
+
+## Test Categories
+
+### Workflow Tests (`test_workflows.py`)
+
+Complete user journey tests that validate end-to-end functionality:
+
+- **Story Lifecycle Tests**: Full CRUD operations with state transitions
+- **Multi-Story Workflows**: Complex scenarios with multiple stories
+- **LLM Integration Workflows**: Combined story management and AI operations
+- **Error Handling Workflows**: Cross-component error scenarios
+
+### Performance Tests (`locustfile.py`)
+
+Load and performance testing using Locust framework:
+
+- **Load Testing**: Simulated user load with realistic usage patterns
+- **Stress Testing**: High-load scenarios to identify breaking points
+- **Endurance Testing**: Long-running tests for stability validation
+- **Spike Testing**: Sudden load increases to test elasticity
+
+## Running Tests
+
+### Workflow Tests
 
 ```bash
-poetry install
+# Run all workflow tests
+poetry run pytest tests/e2e/test_workflows.py
+
+# Run only story workflow tests
+poetry run pytest tests/e2e/test_workflows.py::TestStoryWorkflows
+
+# Run only LLM workflow tests (requires LLM configuration)
+poetry run pytest tests/e2e/test_workflows.py::TestLLMWorkflows -m llm_integration
 ```
+
+### Performance Tests
+
+#### Prerequisites
+
+1. Start the API server:
+
+   ```bash
+   poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8080
+   ```
+
+2. Ensure database is running and populated with test data
+
+#### Running Locust Tests
+
+**Web Interface (Recommended):**
+
+```bash
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080
+```
+
+Then open http://localhost:8089 in your browser to configure and run tests.
+
+**Headless Mode:**
+
+```bash
+# Light load test
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
+  --headless --users 10 --spawn-rate 2 --run-time 2m
+
+# Medium load test
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
+  --headless --users 50 --spawn-rate 5 --run-time 5m
+
+# Heavy stress test
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
+  --headless --users 200 --spawn-rate 10 --run-time 10m
+```
+
+#### Pre-configured Tasks (via tasks.json)
+
+```bash
+# Light load test
+npm run test:performance:light
+
+# Medium load test
+npm run test:performance:medium
+
+# Heavy load test
+npm run test:performance:heavy
+```
+
+## Test Configuration
+
+### Workflow Tests
+
+- Use standard pytest fixtures from main `conftest.py`
+- LLM tests require proper LLM configuration and available models
+- Database tests use isolated test database
+
+### Performance Tests
+
+Performance test configuration is managed in `config.py`:
+
+```python
+# Default test scenarios
+SCENARIOS = {
+    'light': {'users': 10, 'spawn_rate': 2, 'duration': '2m'},
+    'medium': {'users': 50, 'spawn_rate': 5, 'duration': '5m'},
+    'heavy': {'users': 200, 'spawn_rate': 10, 'duration': '10m'},
+    'stress': {'users': 500, 'spawn_rate': 20, 'duration': '5m'},
+    'spike': {'users': 100, 'spawn_rate': 50, 'duration': '3m'},
+    'endurance': {'users': 30, 'spawn_rate': 3, 'duration': '30m'}
+}
+```
+
+## Test Workflow Examples
+
+### Complete Story Workflow
+
+```python
+# Create story → Add content → Generate with LLM → Retrieve results
+story = await create_story({"title": "Test Story", "content": "Once upon a time..."})
+llm_response = await generate_story_continuation(story.id)
+final_story = await get_story(story.id)
+```
+
+### LLM Integration Workflow
+
+```python
+# Test complete LLM pipeline: config → model → generation → validation
+llm_config = await get_llm_config()
+response = await generate_text({"prompt": "Tell me a story", "max_tokens": 100})
+assert response.choices[0].message.content
+```
+
+## Integration with Main Test Suite
+
+E2E tests complement the main test structure:
+
+- **tests/shared/**: Core component tests (models, schemas, main app)
+- **tests/stories/**: Router-specific tests (unit + integration)
+- **tests/llm/**: LLM functionality tests (mocked + real API)
+- **tests/e2e/**: Complete user workflows + performance testing
+
+All tests can be run together: `poetry run pytest tests/` or individually by directory.
 
 ## Test Scenarios
 
