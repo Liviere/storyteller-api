@@ -15,8 +15,7 @@ from app.database.connection import get_db
 from app.models.story import Base
 from main import app
 
-# Import LLM-specific fixtures
-pytest_plugins = ["tests.llm.conftest_llm"]
+
 
 def get_test_database_url():
     """Get test database URL based on environment."""
