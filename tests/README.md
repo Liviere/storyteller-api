@@ -141,22 +141,51 @@ LLM tests require specific setup:
 
 ### Environment Variables
 
-```bash
-# Required for integration tests
-export OPENAI_API_KEY="your-openai-key"
-export GROQ_API_KEY="your-groq-key"
+LLM integration tests automatically detect required API keys from your `llm_config.yaml` configuration:
 
-# Tests will automatically skip if keys are missing
+```bash
+# The test system automatically reads your llm_config.yaml and checks
+# for API keys defined in each provider's 'api_key_env' field
+
+# Example: If your config has providers like:
+# providers:
+#   openai:
+#     api_key_env: "OPENAI_API_KEY"
+#   deepinfra:
+#     api_key_env: "DEEPINFRA_API_KEY"
+#   custom:
+#     api_key_env: "CUSTOM_API_KEY"
+#     requires_api_key: false  # This provider won't be checked
+
+# Then tests will check for: OPENAI_API_KEY, DEEPINFRA_API_KEY
+# And skip providers that have requires_api_key: false
+
+export OPENAI_API_KEY="your-openai-key"
+export DEEPINFRA_API_KEY="your-deepinfra-key"
+# Add other keys as defined in your config
+
+# Tests will automatically skip if required keys are missing
 poetry run pytest tests/llm/test_integration.py
 ```
 
+**Smart API Key Detection:**
+
+- Tests dynamically read `llm_config.yaml` to determine required API keys
+- Only providers with `requires_api_key: true` (default) are checked
+- Providers with `requires_api_key: false` are skipped from validation
+- Tests automatically skip if any required keys are missing
+- No hardcoded provider list - fully configurable via YAML
+
 ### LLM Test Configuration
 
-LLM tests use `llm_config.yaml` and are organized into:
+LLM tests dynamically adapt to your `llm_config.yaml` configuration:
 
-- **Unit tests**: Fast tests with mocked services (no API calls)
-- **Integration tests**: Real API calls to configured providers
+- **Unit tests**: Fast tests with mocked services (no API calls, no configuration dependency)
+- **Integration tests**: Real API calls to providers defined in your YAML config
 - **API tests**: FastAPI endpoint tests with mocked LLM services
+- **Configuration-aware**: Tests automatically detect which providers are enabled and their API key requirements
+- **Flexible providers**: Support any provider defined in YAML with custom `api_key_env` settings
+- **Smart skipping**: Tests skip gracefully when required API keys are missing or providers are disabled
 
 ## Performance Testing
 
@@ -276,7 +305,7 @@ docker-compose -f docker-compose.test.yml down -v
 ```bash
 # Set required API keys
 export OPENAI_API_KEY="your-key"
-export GROQ_API_KEY="your-key"
+export DEEPINFRA_API_KEY="your-key"
 
 # Or skip LLM integration tests
 poetry run pytest -m "not llm_integration"

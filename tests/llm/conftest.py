@@ -204,19 +204,33 @@ def sample_improvement_requests(sample_story_content):
 
 
 @pytest.fixture
-def skip_integration_tests():
-    """Determine whether to skip integration tests based on environment."""
-    # Skip if no API keys are available
-    has_openai_key = bool(os.getenv("OPENAI_API_KEY"))
-    has_deepinfra_key = bool(os.getenv("DEEPINFRA_API_KEY"))
-    has_any_key = has_openai_key or has_deepinfra_key
+def skip_integration_tests(llm_config_data):
+    """Determine whether to skip integration tests based on available providers and API keys."""
+    import os
     
     # Skip if explicitly disabled
     skip_integration = os.getenv("SKIP_LLM_INTEGRATION_TESTS", "false").lower() == "true"
+    if skip_integration:
+        pytest.skip("Skipping LLM integration tests: integration tests explicitly disabled.")
     
-    if skip_integration or not has_any_key:
-        pytest.skip("Skipping LLM integration tests: no API keys available or integration tests disabled.")
-
+    # Extract required API keys from config
+    providers_config = llm_config_data.get('providers', {})
+    required_api_keys = []
+    available_providers = []
+    
+    for provider_name, provider_config in providers_config.items():
+        if provider_config.get('requires_api_key', False):
+            api_key_env = provider_config.get('api_key_env')
+            if api_key_env:
+                required_api_keys.append(api_key_env)
+                if os.getenv(api_key_env):
+                    available_providers.append(provider_name)
+    
+    # Check if at least one provider has an API key available
+    if not available_providers:
+        missing_keys = [key for key in required_api_keys if not os.getenv(key)]
+        pytest.skip(f"Skipping LLM integration tests. No API keys available for configured providers. Missing: {missing_keys}")
+    
     return True
 
 

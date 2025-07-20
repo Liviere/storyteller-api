@@ -294,9 +294,34 @@ def test_new_config_option(self, llm_config_data):
 2. **API Key Issues**
 
    ```bash
-   # Check environment variables
-   echo $OPENAI_API_KEY
-   echo $DEEPINFRA_API_KEY
+   # Integration tests automatically check required API keys from llm_config.yaml
+   # The system reads 'providers' section and checks 'api_key_env' for each provider
+
+   # Check which providers are configured
+   poetry run python -c "
+   import yaml
+   with open('llm_config.yaml') as f:
+       config = yaml.safe_load(f)
+       for name, provider in config['providers'].items():
+           key_env = provider.get('api_key_env', 'N/A')
+           required = provider.get('requires_api_key', False)
+           print(f'{name}: {key_env} (required: {required})')
+   "
+
+   # Check environment variables dynamically
+   poetry run python -c "
+   import os, yaml
+   with open('llm_config.yaml') as f:
+       config = yaml.safe_load(f)
+       for name, provider in config['providers'].items():
+           if provider.get('requires_api_key', False):
+               key_env = provider.get('api_key_env')
+               has_key = bool(os.getenv(key_env)) if key_env else False
+               print(f'{name} ({key_env}): {'✓' if has_key else '✗'}')
+   "
+
+   # Skip integration tests without API keys
+   SKIP_LLM_INTEGRATION_TESTS=true poetry run pytest tests/llm/
 
    # Run only mock tests
    poetry run pytest tests/llm/ -m llm_mock

@@ -297,7 +297,7 @@ LLM integration tests require API keys:
 
 ```bash
 export OPENAI_API_KEY="your-key"
-export GROQ_API_KEY="your-key"
+export DEEPINFRA_API_KEY="your-key"
 # Tests will automatically skip if keys are missing
 ```
 

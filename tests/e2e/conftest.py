@@ -44,18 +44,31 @@ def integration_test_models(test_models_list):
 
 
 @pytest.fixture
-def skip_integration_tests():
-    """Skip LLM integration tests if required environment variables are not set."""
+def skip_integration_tests(llm_config_data):
+    """Skip LLM integration tests if no API keys for configured providers are available."""
     import os
     
-    required_env_vars = [
-        "OPENAI_API_KEY",
-        "GROQ_API_KEY"
-    ]
+    # Skip if explicitly disabled
+    skip_integration = os.getenv("SKIP_LLM_INTEGRATION_TESTS", "false").lower() == "true"
+    if skip_integration:
+        pytest.skip("Skipping LLM integration tests: integration tests explicitly disabled.")
     
-    missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+    # Extract required API keys from config
+    providers_config = llm_config_data.get('providers', {})
+    required_api_keys = []
+    available_providers = []
     
-    if missing_vars:
-        pytest.skip(f"Skipping LLM integration tests. Missing environment variables: {missing_vars}")
+    for provider_name, provider_config in providers_config.items():
+        if provider_config.get('requires_api_key', False):
+            api_key_env = provider_config.get('api_key_env')
+            if api_key_env:
+                required_api_keys.append(api_key_env)
+                if os.getenv(api_key_env):
+                    available_providers.append(provider_name)
+    
+    # Check if at least one provider has an API key available
+    if not available_providers:
+        missing_keys = [key for key in required_api_keys if not os.getenv(key)]
+        pytest.skip(f"Skipping LLM integration tests. No API keys available for configured providers. Missing: {missing_keys}")
     
     return True
