@@ -1,179 +1,314 @@
 # Tests for Story Teller API
 
-This directory contains comprehensive unit and integration tests for the Story Teller API.
+This directory contains comprehensive unit, integration, and end-to-end tests for the Story Teller API, organized by functionality and router structure.
 
 ## Test Structure
 
 ```
 tests/
 ├── __init__.py              # Package marker
-├── conftest.py             # Test configuration and fixtures
+├── conftest.py             # Main test configuration and fixtures
 ├── README.md              # This file
-├── unit/                  # Unit tests
+├── shared/                # Shared component tests (reusable across routers)
 │   ├── __init__.py
-│   ├── test_models.py     # Tests for SQLAlchemy models
-│   ├── test_schemas.py    # Tests for Pydantic schemas
-│   └── test_main.py       # Tests for main application
-├── integration/           # Integration tests
+│   ├── test_models.py     # SQLAlchemy model tests
+│   ├── test_schemas.py    # Pydantic schema tests
+│   └── test_main.py       # Main application tests
+├── stories/               # Stories router tests
 │   ├── __init__.py
-│   ├── test_api.py        # Tests for API endpoints
-│   └── test_integration.py # End-to-end workflow tests
-└── performance/           # Performance tests
+│   ├── conftest.py        # Stories-specific fixtures
+│   ├── test_unit.py       # Unit tests (validation, business logic)
+│   └── test_integration.py # Integration tests (API endpoints)
+├── llm/                   # LLM functionality tests
+│   ├── __init__.py
+│   ├── conftest.py        # LLM-specific fixtures and configuration
+│   ├── test_unit.py       # Unit tests with mocked LLM services
+│   ├── test_integration.py # Real LLM API integration tests
+│   └── test_llm_api.py    # LLM API endpoint tests (mocked)
+└── e2e/                   # End-to-end workflows and performance tests
     ├── __init__.py
-    ├── locustfile.py      # Locust performance test scenarios
+    ├── conftest.py        # E2E test fixtures
+    ├── test_workflows.py  # Complete user journey tests
+    ├── locustfile.py      # Performance testing scenarios
     ├── config.py          # Performance test configuration
-    └── README.md          # Performance testing documentation
+    └── README.md          # E2E testing documentation
 ```
 
 ## Test Categories
 
-### Unit Tests (`tests/unit/`)
+### Shared Component Tests (`tests/shared/`)
 
-- **test_models.py**: Tests for SQLAlchemy models including validation, relationships, and database operations
-- **test_schemas.py**: Tests for Pydantic schemas including validation and serialization
-- **test_main.py**: Tests for main application endpoints and configuration
+**Purpose**: Tests for core components used across multiple routers
 
-### Integration Tests (`tests/integration/`)
+- **test_models.py** (6 tests): SQLAlchemy model validation, relationships, and database operations
+- **test_schemas.py** (10 tests): Pydantic schema validation, serialization, and field constraints
+- **test_main.py** (5 tests): Main application endpoints, CORS, and documentation
 
-- **test_api.py**: Comprehensive tests for all story-related API endpoints including CRUD operations, filtering, and error handling
-- **test_integration.py**: End-to-end tests that verify complete workflows and component interactions
+### Stories Router Tests (`tests/stories/`)
 
-### Performance Tests (`tests/performance/`)
+**Purpose**: Complete testing of story management functionality
 
-- **locustfile.py**: Locust-based load testing scenarios with realistic user behavior simulation
-- **config.py**: Configuration for different performance test scenarios
+- **test_unit.py** (16 tests): Story validation, business logic, filtering, and helper functions
+- **test_integration.py** (18 tests): Full API endpoint testing including CRUD operations, filtering, publishing
+
+### LLM Functionality Tests (`tests/llm/`)
+
+**Purpose**: Comprehensive testing of AI/LLM integration
+
+- **test_unit.py** (25 tests): Configuration validation, service initialization, mocked LLM operations
+- **test_integration.py** (7 tests): Real API calls to configured LLM providers (requires API keys)
+- **test_llm_api.py** (19 tests): FastAPI endpoint testing with mocked LLM services
+
+### End-to-End Tests (`tests/e2e/`)
+
+**Purpose**: Complete user workflows and performance testing
+
+- **test_workflows.py** (6 tests): Full user journeys combining story management with LLM operations
+- **locustfile.py**: Performance testing scenarios (light, medium, heavy load testing)
+- **config.py**: Performance test configuration and scenarios
 
 ## Running Tests
 
-### Run All Tests
+### Run All Tests (107 total)
 
 ```bash
-# Using Poetry
+# Run all tests
 poetry run pytest
 
-# Or using VS Code task
-# Ctrl+Shift+P -> "Tasks: Run Task" -> "Poetry: Run Tests"
-```
+# Run with verbose output
+poetry run pytest -v
 
-### Run Specific Test Categories
-
-```bash
-# Run only unit tests
-poetry run pytest tests/unit/ -v
-
-# Run only integration tests
-poetry run pytest tests/integration/ -v
-
-# Run specific test files
-poetry run pytest tests/unit/test_models.py -v
-poetry run pytest tests/integration/test_api.py -v
-```
-
-### Run Tests with Coverage
-
-```bash
-# Generate coverage report
+# Run with coverage report
 poetry run pytest --cov=. --cov-report=html
-
-# View coverage report
 open reports/coverage/index.html
 ```
 
-### Run Tests with Verbose Output
+### Run Tests by Category
 
 ```bash
-poetry run pytest -v
+# Shared component tests (16 tests)
+poetry run pytest tests/shared/ -v
+
+# Stories functionality tests (34 tests)
+poetry run pytest tests/stories/ -v
+
+# LLM functionality tests (51 tests)
+poetry run pytest tests/llm/ -v
+
+# End-to-end workflow tests (6 tests)
+poetry run pytest tests/e2e/ -v
 ```
 
-### Run Specific Test
+### Run Specific Test Files
 
 ```bash
-# Run a specific test class
-poetry run pytest tests/integration/test_api.py::TestStoriesAPI
-
-# Run a specific test method
-poetry run pytest tests/integration/test_api.py::TestStoriesAPI::test_create_story
+# Individual test files
+poetry run pytest tests/shared/test_models.py -v
+poetry run pytest tests/stories/test_integration.py -v
+poetry run pytest tests/llm/test_unit.py -v
+poetry run pytest tests/e2e/test_workflows.py -v
 ```
 
-## Test Fixtures
+### Run Tests with Markers
 
-The tests use several fixtures defined in `conftest.py`:
+```bash
+# Skip LLM integration tests (requires API keys)
+poetry run pytest -m "not llm_integration"
 
-- **temp_db**: Creates a temporary SQLite database for testing
-- **db_session**: Provides a database session for tests
-- **client**: FastAPI test client with temporary database
-- **sample_story_data**: Sample story data for testing
-- **sample_stories_data**: Multiple sample stories for testing
+# Run only slow tests
+poetry run pytest -m "slow"
 
-## Test Database
-
-Tests use a temporary SQLite database that is created and destroyed for each test session. This ensures:
-
-- Tests are isolated and don't affect each other
-- No test data persists between test runs
-- Tests can run in parallel without conflicts
-
-## Writing New Tests
-
-When adding new tests:
-
-1. **Follow naming conventions**: Test files should start with `test_`, test classes with `Test`, and test methods with `test_`
-
-2. **Use appropriate fixtures**: Use the provided fixtures for database sessions and test clients
-
-3. **Test both success and failure cases**: Include tests for valid inputs and error conditions
-
-4. **Use descriptive test names**: Test method names should clearly describe what is being tested
-
-5. **Add docstrings**: Include docstrings explaining what each test does
-
-Example test:
-
-```python
-def test_create_story_with_valid_data(self, client, sample_story_data):
-    """Test creating a story with valid data returns 200 and correct data."""
-    response = client.post("/api/v1/stories/", json=sample_story_data)
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["title"] == sample_story_data["title"]
-    assert "id" in data
+# Run only fast unit tests
+poetry run pytest tests/shared/ tests/stories/test_unit.py tests/llm/test_unit.py
 ```
+
+### Run Specific Test Methods
+
+```bash
+# Specific test class
+poetry run pytest tests/stories/test_integration.py::TestStoriesAPI -v
+
+# Specific test method
+poetry run pytest tests/stories/test_integration.py::TestStoriesAPI::test_create_story -v
+
+# Pattern matching
+poetry run pytest -k "test_story_creation" -v
+```
+
+## LLM Testing
+
+LLM tests require specific setup:
+
+### Environment Variables
+
+```bash
+# Required for integration tests
+export OPENAI_API_KEY="your-openai-key"
+export GROQ_API_KEY="your-groq-key"
+
+# Tests will automatically skip if keys are missing
+poetry run pytest tests/llm/test_integration.py
+```
+
+### LLM Test Configuration
+
+LLM tests use `llm_config.yaml` and are organized into:
+
+- **Unit tests**: Fast tests with mocked services (no API calls)
+- **Integration tests**: Real API calls to configured providers
+- **API tests**: FastAPI endpoint tests with mocked LLM services
+
+## Performance Testing
+
+### Start Application
+
+```bash
+# Start the application first
+poetry run uvicorn main:app --reload --port 8080
+```
+
+### Run Performance Tests
+
+```bash
+# Web interface for interactive testing
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080
+
+# Headless mode with different scenarios
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
+  --headless --users 10 --spawn-rate 2 --run-time 2m --html reports/light_load.html
+
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
+  --headless --users 50 --spawn-rate 5 --run-time 5m --html reports/medium_load.html
+```
+
+### Using VS Code Tasks
+
+```bash
+# Pre-configured performance test tasks
+# Open Command Palette (Ctrl+Shift+P) and search for "Tasks: Run Task"
+- "Locust: Light Load Test"
+- "Locust: Medium Load Test"
+- "Locust: Heavy Load Test"
+```
+
+## Test Architecture
+
+### Router-Based Organization
+
+The new test structure follows the application's router organization:
+
+- **Shared components** (`tests/shared/`): Core components used across multiple routers
+- **Router-specific tests** (`tests/stories/`, `tests/llm/`): Tests organized by API router
+- **End-to-end tests** (`tests/e2e/`): Complete workflows spanning multiple components
+
+### Test Isolation and Fixtures
+
+- **Database isolation**: Each test uses temporary SQLite database or dedicated MySQL test instance
+- **Fixture hierarchy**: Main `conftest.py` provides shared fixtures, router-specific `conftest.py` files provide specialized fixtures
+- **LLM mocking**: Unit tests use mocked LLM services, integration tests use real APIs with graceful skipping
+
+### Test Markers
+
+Tests use pytest markers for organization:
+
+- `@pytest.mark.llm_integration`: Tests requiring real LLM API calls
+- `@pytest.mark.slow`: Tests that take longer to execute
+- `@pytest.mark.asyncio`: Async tests
 
 ## Test Coverage Goals
 
-Aim for high test coverage across all components:
+Current coverage: **76.57%** across 107 tests
 
-- Models: 100% (all fields, validations, relationships)
-- Schemas: 100% (all validation rules and serialization)
-- API endpoints: 100% (all routes, success and error cases)
-- Main application: 100% (configuration, middleware, startup)
+**Coverage by component:**
 
-## Continuous Integration
+- **Stories router**: High coverage (API endpoints, business logic)
+- **Shared components**: Full coverage (models, schemas, main app)
+- **LLM functionality**: Good coverage with both mocked and real API tests
+- **End-to-end workflows**: Complete user journey coverage
 
-These tests are designed to run in CI/CD pipelines. They:
+## Writing New Tests
 
-- Use temporary databases (no external dependencies)
-- Clean up after themselves
-- Provide clear failure messages
-- Generate coverage reports
+### Guidelines
+
+1. **Follow router organization**: Place tests in appropriate router directory
+2. **Use shared components**: Leverage `tests/shared/` for reusable component tests
+3. **Mock external services**: Use mocks for unit tests, real APIs for integration tests
+4. **Test error cases**: Include both success and failure scenarios
+
+### Example Test Structure
+
+```python
+# tests/stories/test_unit.py
+class TestStoryValidation:
+    def test_story_create_validation(self):
+        """Test story creation validation logic."""
+        # Unit test with mocked dependencies
+
+# tests/stories/test_integration.py
+class TestStoriesAPI:
+    def test_create_story(self, client, sample_story_data):
+        """Test story creation via API endpoint."""
+        # Integration test with real database
+```
+
+## Docker Test Environment
+
+For production-like testing with MySQL:
+
+```bash
+# Start isolated test database (MySQL on port 3307)
+docker-compose -f docker-compose.test.yml up -d
+
+# Run tests with MySQL instead of SQLite
+TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" \
+poetry run pytest tests/ -v
+
+# Cleanup test environment
+docker-compose -f docker-compose.test.yml down -v
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Import errors**: Ensure all dependencies are installed with `poetry install`
+**LLM Integration Tests Failing:**
 
-2. **Database connection errors**: Tests use temporary databases, but check that SQLAlchemy is properly configured
+```bash
+# Set required API keys
+export OPENAI_API_KEY="your-key"
+export GROQ_API_KEY="your-key"
 
-3. **Fixture not found**: Make sure `conftest.py` is in the same directory or a parent directory
+# Or skip LLM integration tests
+poetry run pytest -m "not llm_integration"
+```
 
-4. **Test isolation issues**: Each test should clean up after itself or use fresh fixtures
+**Database Connection Issues:**
+
+```bash
+# Use SQLite for local testing
+poetry run pytest tests/
+
+# Use MySQL test instance for production-like testing
+docker-compose -f docker-compose.test.yml up -d
+TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" poetry run pytest
+```
+
+**Performance Test Issues:**
+
+```bash
+# Ensure application is running first
+poetry run uvicorn main:app --reload --port 8080
+
+# Then run performance tests
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080
+```
 
 ### Debug Mode
 
-Run tests with more verbose output for debugging:
-
 ```bash
+# Verbose output with full tracebacks
 poetry run pytest -vvv --tb=long
+
+# Run specific failing test with maximum detail
+poetry run pytest tests/stories/test_integration.py::TestStoriesAPI::test_create_story -vvv --tb=long
 ```

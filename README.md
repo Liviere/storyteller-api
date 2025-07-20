@@ -217,56 +217,109 @@ poetry run mypy .
 # Run tests
 poetry run pytest
 
-# Run tests with coverage
-poetry run pytest --cov=. --cov-report=term-missing --cov-report=html
-
-# Run specific test categories
-poetry run pytest tests/test_models.py tests/test_schemas.py  # Unit tests
-poetry run pytest tests/test_api.py                          # API tests
-poetry run pytest tests/test_integration.py                  # Integration tests
 ```
 
 ## Testing
 
-The project includes comprehensive unit and integration tests with high code coverage (96%+).
+The project includes comprehensive unit, integration, and end-to-end tests with organized structure and high code coverage.
 
 ### Test Structure
 
 ```
 tests/
-├── conftest.py          # Test configuration and fixtures
-├── test_models.py       # SQLAlchemy model tests
-├── test_schemas.py      # Pydantic schema tests
-├── test_api.py          # API endpoint tests
-├── test_main.py         # Main application tests
-├── test_integration.py  # Integration tests
-└── README.md           # Test documentation
+├── conftest.py          # Main test configuration and fixtures
+├── shared/              # Shared component tests (models, schemas, main app)
+│   ├── test_models.py   # SQLAlchemy model tests
+│   ├── test_schemas.py  # Pydantic schema tests
+│   └── test_main.py     # Main application tests
+├── stories/             # Stories router tests
+│   ├── test_unit.py     # Unit tests for story validation and business logic
+│   ├── test_integration.py # API endpoint integration tests
+│   └── conftest.py      # Stories-specific fixtures
+├── llm/                 # LLM functionality tests
+│   ├── test_unit.py     # Unit tests with mocked LLM services
+│   ├── test_integration.py # Real LLM API integration tests
+│   ├── test_llm_api.py  # LLM API endpoint tests (mocked)
+│   └── conftest.py      # LLM-specific fixtures and configuration
+├── e2e/                 # End-to-end workflows and performance tests
+│   ├── test_workflows.py # Complete user journey tests
+│   ├── locustfile.py    # Performance testing scenarios
+│   ├── config.py        # Performance test configuration
+│   └── conftest.py      # E2E test fixtures
+└── README.md           # Detailed test documentation
 ```
 
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (107 total)
 poetry run pytest
 
 # Run with coverage report
 poetry run pytest --cov=. --cov-report=html
 open reports/coverage/index.html
 
-# Run specific test file
-poetry run pytest tests/test_api.py -v
+# Run specific test categories
+poetry run pytest tests/shared/     # Core component tests (16 tests)
+poetry run pytest tests/stories/   # Stories functionality (34 tests)
+poetry run pytest tests/llm/       # LLM functionality (51 tests)
+poetry run pytest tests/e2e/       # End-to-end workflows (6 tests)
 
-# Run specific test method
-poetry run pytest tests/test_api.py::TestStoriesAPI::test_create_story -v
+# Run specific test files
+poetry run pytest tests/stories/test_integration.py -v
+poetry run pytest tests/llm/test_unit.py -v
+
+# Run with different markers
+poetry run pytest -m "not llm_integration"  # Skip LLM integration tests
+poetry run pytest -m "slow"                 # Run only slow tests
 ```
 
 ### Test Features
 
-- **Isolated testing**: Each test uses a temporary SQLite database
-- **Comprehensive coverage**: Tests for models, schemas, API endpoints, and integrations
-- **Error handling**: Tests for both success and failure scenarios
-- **Fixtures**: Reusable test data and database sessions
-- **Fast execution**: Tests run in under 2 seconds
+- **Router-based organization**: Tests organized by application routers (stories, llm)
+- **Shared components**: Reusable tests for models, schemas, and main app
+- **Comprehensive coverage**: Unit tests, integration tests, and complete workflows
+- **LLM testing**: Both mocked unit tests and real API integration tests
+- **Performance testing**: Load testing with Locust for various scenarios
+- **Isolated testing**: Each test uses temporary SQLite database or dedicated MySQL test instance
+- **Fixtures and mocking**: Extensive use of pytest fixtures and mocking for reliable tests
+- **Fast execution**: Unit tests run quickly, integration tests can be skipped if needed
+
+### LLM Testing
+
+LLM tests are organized into categories:
+
+- **Unit tests** (`tests/llm/test_unit.py`): Fast tests with mocked LLM services
+- **Integration tests** (`tests/llm/test_integration.py`): Real API calls to configured LLM providers
+- **API tests** (`tests/llm/test_llm_api.py`): FastAPI endpoint tests with mocked services
+
+LLM integration tests require API keys:
+
+```bash
+export OPENAI_API_KEY="your-key"
+export GROQ_API_KEY="your-key"
+# Tests will automatically skip if keys are missing
+```
+
+### Performance Testing
+
+Run performance tests with different load scenarios:
+
+```bash
+# Start the application first
+poetry run uvicorn main:app --reload --port 8080
+
+# Light load test (10 users, 2 min)
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
+  --headless --users 10 --spawn-rate 2 --run-time 2m
+
+# Medium load test (50 users, 5 min)
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
+  --headless --users 50 --spawn-rate 5 --run-time 5m
+
+# Or use pre-configured tasks
+npm run test:performance:light   # If using VS Code tasks
+```
 
 ### Docker Test Environment
 
