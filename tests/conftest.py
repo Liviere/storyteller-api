@@ -16,7 +16,6 @@ from app.models.story import Base
 from main import app
 
 
-
 def get_test_database_url():
     """Get test database URL based on environment."""
     # Check if we should use MySQL for testing (e.g., in CI/CD)
@@ -28,6 +27,7 @@ def get_test_database_url():
     temp_file = tempfile.NamedTemporaryFile(delete=False)
     temp_file.close()
     return f"sqlite:///{temp_file.name}"
+
 
 @pytest.fixture
 def temp_db():

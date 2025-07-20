@@ -6,8 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.connection import create_tables
-from app.routers.stories import router as stories_router
 from app.routers.llm import router as llm_router
+from app.routers.stories import router as stories_router
 
 load_dotenv()  # Load environment variables from .env file
 

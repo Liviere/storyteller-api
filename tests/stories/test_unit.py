@@ -5,11 +5,12 @@ These tests focus on business logic without requiring database connections
 or API endpoints. They test data validation, transformations, and pure functions.
 """
 
-import pytest
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-from app.schemas.story import StoryCreate, StoryUpdate, StoryResponse
+import pytest
+
+from app.schemas.story import StoryCreate, StoryResponse, StoryUpdate
 
 
 class TestStoryValidation:
@@ -22,7 +23,7 @@ class TestStoryValidation:
             "title": "Test Story",
             "content": "This is a test story.",
             "author": "Test Author",
-            "genre": "Fiction"
+            "genre": "Fiction",
         }
         story = StoryCreate(**valid_data)
         assert story.title == "Test Story"
@@ -33,7 +34,7 @@ class TestStoryValidation:
         minimal_data = {
             "title": "Minimal Story",
             "content": "Minimal content.",
-            "author": "Minimal Author"
+            "author": "Minimal Author",
         }
         story = StoryCreate(**minimal_data)
         assert story.genre is None
@@ -57,7 +58,7 @@ class TestStoryValidation:
             "genre": "Response Genre",
             "is_published": True,
             "created_at": datetime.now(),
-            "updated_at": datetime.now()
+            "updated_at": datetime.now(),
         }
         story_response = StoryResponse(**response_data)
         assert story_response.id == 1
@@ -80,7 +81,7 @@ class TestStoryBusinessLogic:
         # Test minimum content length validation
         short_content = "Too short"
         long_content = "A" * 10000
-        
+
         # These would be actual business logic validations
         assert len(short_content) >= 1  # Minimum length
         assert len(long_content) <= 50000  # Maximum length
@@ -110,7 +111,7 @@ class TestStoryHelpers:
         expected_slug = "my-awesome-story"
         # slug = generate_slug(title)  # Would be actual function
         # assert slug == expected_slug
-        
+
         # For now, simple test
         simplified = title.lower().replace(" ", "-").replace("!", "")
         assert "my-awesome-story" in simplified
@@ -119,7 +120,7 @@ class TestStoryHelpers:
         """Test story excerpt generation from content."""
         content = "This is a very long story content that should be truncated to create an excerpt for display purposes."
         max_length = 50
-        
+
         # Simple excerpt logic
         excerpt = content[:max_length] + "..." if len(content) > max_length else content
         assert len(excerpt) <= max_length + 3  # +3 for "..."
@@ -136,7 +137,7 @@ class TestStoryHelpers:
         content = "This is a test story. " * 100  # ~400 words
         words_per_minute = 200
         word_count = len(content.split())
-        
+
         estimated_minutes = max(1, word_count // words_per_minute)
         assert estimated_minutes >= 1
 
@@ -149,9 +150,9 @@ class TestStoryFiltering:
         stories_data = [
             {"title": "Fantasy Story", "genre": "Fantasy"},
             {"title": "Sci-Fi Story", "genre": "Science Fiction"},
-            {"title": "Mystery Story", "genre": "Mystery"}
+            {"title": "Mystery Story", "genre": "Mystery"},
         ]
-        
+
         # Filter by genre
         fantasy_stories = [s for s in stories_data if s["genre"] == "Fantasy"]
         assert len(fantasy_stories) == 1
@@ -162,9 +163,9 @@ class TestStoryFiltering:
         stories_data = [
             {"title": "Story 1", "author": "John Smith"},
             {"title": "Story 2", "author": "Jane Smith"},
-            {"title": "Story 3", "author": "Bob Jones"}
+            {"title": "Story 3", "author": "Bob Jones"},
         ]
-        
+
         # Search by author (partial match)
         smith_stories = [s for s in stories_data if "Smith" in s["author"]]
         assert len(smith_stories) == 2
@@ -174,9 +175,9 @@ class TestStoryFiltering:
         stories_data = [
             {"title": "Published Story", "is_published": True},
             {"title": "Draft Story", "is_published": False},
-            {"title": "Another Published", "is_published": True}
+            {"title": "Another Published", "is_published": True},
         ]
-        
+
         published_stories = [s for s in stories_data if s["is_published"]]
         assert len(published_stories) == 2
 
@@ -184,11 +185,11 @@ class TestStoryFiltering:
         """Test pagination calculation logic."""
         total_items = 25
         page_size = 10
-        
+
         # Calculate total pages
         total_pages = (total_items + page_size - 1) // page_size
         assert total_pages == 3
-        
+
         # Calculate offset for page 2
         page = 2
         offset = (page - 1) * page_size

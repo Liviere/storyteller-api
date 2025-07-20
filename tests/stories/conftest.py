@@ -49,19 +49,19 @@ def sample_stories_data():
 def db_with_stories(db_session, sample_stories_data):
     """Database session pre-populated with sample stories."""
     from app.models.story import Story
-    
+
     stories = []
     for story_data in sample_stories_data:
         story = Story(**story_data)
         db_session.add(story)
         stories.append(story)
-    
+
     db_session.commit()
-    
+
     # Refresh to get IDs
     for story in stories:
         db_session.refresh(story)
-    
+
     yield db_session, stories
-    
+
     # Cleanup is handled by the parent db_session fixture

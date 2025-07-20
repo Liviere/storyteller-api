@@ -13,11 +13,18 @@ The module is designed to work with OpenAI-compatible models
 
 # Import will be available after installing dependencies
 try:
-    from .services import LLMService, get_llm_service
-    from .models import LLMModelFactory, get_model_factory
     from .config import LLMConfig, llm_config
-    
-    __all__ = ["LLMService", "get_llm_service", "LLMModelFactory", "get_model_factory", "LLMConfig", "llm_config"]
+    from .models import LLMModelFactory, get_model_factory
+    from .services import LLMService, get_llm_service
+
+    __all__ = [
+        "LLMService",
+        "get_llm_service",
+        "LLMModelFactory",
+        "get_model_factory",
+        "LLMConfig",
+        "llm_config",
+    ]
 except ImportError:
     # LangChain dependencies not yet installed
     __all__ = []

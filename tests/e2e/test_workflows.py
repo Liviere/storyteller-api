@@ -137,8 +137,10 @@ class TestStoryWorkflows:
         fantasy_author_response = client.get("/api/v1/stories/?author=Fantasy Writer")
         assert fantasy_author_response.status_code == status.HTTP_200_OK
         fantasy_author_stories = fantasy_author_response.json()
-        assert len(fantasy_author_stories) == 2  # Finds both "Fantasy Writer" and "Another Fantasy Writer"
-        
+        assert (
+            len(fantasy_author_stories) == 2
+        )  # Finds both "Fantasy Writer" and "Another Fantasy Writer"
+
         # Test exact author filtering - use more specific search
         exact_author_response = client.get("/api/v1/stories/?author=Sci-Fi Writer")
         assert exact_author_response.status_code == status.HTTP_200_OK
@@ -236,130 +238,140 @@ class TestStoryWorkflows:
 
 class TestLLMWorkflows:
     """End-to-end workflow tests for LLM functionality."""
-    
+
     @pytest.mark.llm_integration
     @pytest.mark.slow
-    def test_full_story_llm_workflow(self, client: TestClient, integration_test_models, skip_integration_tests):
+    def test_full_story_llm_workflow(
+        self, client: TestClient, integration_test_models, skip_integration_tests
+    ):
         """Test complete story workflow: generate -> analyze -> summarize -> improve."""
         # Skip if no models configured
         if not integration_test_models.get("story_generation"):
             pytest.skip("No models configured for complete workflow test")
-        
+
         # Step 1: Generate a story
-        generate_response = client.post("/api/v1/llm/generate", json={
-            "prompt": "A story about friendship",
-            "genre": "drama",
-            "length": "short"
-        })
-        
+        generate_response = client.post(
+            "/api/v1/llm/generate",
+            json={
+                "prompt": "A story about friendship",
+                "genre": "drama",
+                "length": "short",
+            },
+        )
+
         if generate_response.status_code != 200:
             pytest.skip("Story generation failed, skipping workflow test")
-        
+
         story = generate_response.json()["story"]
-        
+
         # Step 2: Analyze the story
-        analyze_response = client.post("/api/v1/llm/analyze", json={
-            "content": story,
-            "analysis_type": "full"
-        })
-        
+        analyze_response = client.post(
+            "/api/v1/llm/analyze", json={"content": story, "analysis_type": "full"}
+        )
+
         if analyze_response.status_code == 200:
             analysis = analyze_response.json()
             assert "analysis" in analysis
-        
+
         # Step 3: Summarize the story
-        summarize_response = client.post("/api/v1/llm/summarize", json={
-            "content": story,
-            "summary_length": "brief"
-        })
-        
+        summarize_response = client.post(
+            "/api/v1/llm/summarize", json={"content": story, "summary_length": "brief"}
+        )
+
         if summarize_response.status_code == 200:
             summary = summarize_response.json()
             assert "summary" in summary
-        
+
         # Step 4: Improve the story
-        improve_response = client.post("/api/v1/llm/improve", json={
-            "content": story,
-            "improvement_type": "general"
-        })
-        
+        improve_response = client.post(
+            "/api/v1/llm/improve",
+            json={"content": story, "improvement_type": "general"},
+        )
+
         if improve_response.status_code == 200:
             improved = improve_response.json()
             assert "improved_story" in improved
             assert improved["original_story"] == story
 
     @pytest.mark.llm_integration
-    @pytest.mark.slow  
-    def test_story_management_with_llm_workflow(self, client: TestClient, integration_test_models, skip_integration_tests):
+    @pytest.mark.slow
+    def test_story_management_with_llm_workflow(
+        self, client: TestClient, integration_test_models, skip_integration_tests
+    ):
         """Test combining story management with LLM operations."""
         # Skip if no models configured
         if not integration_test_models.get("story_generation"):
             pytest.skip("No models configured for LLM workflow test")
-        
+
         # Step 1: Generate a story using LLM
-        generate_response = client.post("/api/v1/llm/generate", json={
-            "prompt": "A tale of two cities in a fantasy world",
-            "genre": "fantasy",
-            "length": "medium"
-        })
-        
+        generate_response = client.post(
+            "/api/v1/llm/generate",
+            json={
+                "prompt": "A tale of two cities in a fantasy world",
+                "genre": "fantasy",
+                "length": "medium",
+            },
+        )
+
         if generate_response.status_code != 200:
             pytest.skip("Story generation failed, skipping workflow test")
-        
+
         generated_story = generate_response.json()["story"]
-        
+
         # Step 2: Save the generated story to database
         story_data = {
             "title": "LLM Generated Fantasy Tale",
             "content": generated_story,
             "author": "AI Assistant",
             "genre": "Fantasy",
-            "is_published": False
+            "is_published": False,
         }
-        
+
         create_response = client.post("/api/v1/stories/", json=story_data)
         assert create_response.status_code == status.HTTP_200_OK
         created_story = create_response.json()
         story_id = created_story["id"]
-        
+
         # Step 3: Analyze the story
-        analyze_response = client.post("/api/v1/llm/analyze", json={
-            "content": generated_story,
-            "analysis_type": "sentiment"
-        })
-        
+        analyze_response = client.post(
+            "/api/v1/llm/analyze",
+            json={"content": generated_story, "analysis_type": "sentiment"},
+        )
+
         if analyze_response.status_code == 200:
             analysis = analyze_response.json()
             assert "analysis" in analysis
-        
+
         # Step 4: Improve the story
-        improve_response = client.post("/api/v1/llm/improve", json={
-            "content": generated_story,
-            "improvement_type": "clarity"
-        })
-        
+        improve_response = client.post(
+            "/api/v1/llm/improve",
+            json={"content": generated_story, "improvement_type": "clarity"},
+        )
+
         if improve_response.status_code == 200:
             improved = improve_response.json()
             improved_story = improved["improved_story"]
-            
+
             # Step 5: Update the story with improved version
             update_data = {
                 "content": improved_story,
-                "title": "Improved LLM Generated Fantasy Tale"
+                "title": "Improved LLM Generated Fantasy Tale",
             }
-            update_response = client.put(f"/api/v1/stories/{story_id}", json=update_data)
+            update_response = client.put(
+                f"/api/v1/stories/{story_id}", json=update_data
+            )
             assert update_response.status_code == status.HTTP_200_OK
-        
+
         # Step 6: Publish the final story
         publish_response = client.patch(f"/api/v1/stories/{story_id}/publish")
         assert publish_response.status_code == status.HTTP_200_OK
-        
+
         # Step 7: Verify the published story
         get_response = client.get(f"/api/v1/stories/{story_id}")
         assert get_response.status_code == status.HTTP_200_OK
         final_story = get_response.json()
         assert final_story["is_published"] is True
-        
+
         # Cleanup
         delete_response = client.delete(f"/api/v1/stories/{story_id}")
         assert delete_response.status_code == status.HTTP_200_OK
