@@ -6,7 +6,7 @@ Each chain combines prompts with models for specific functionality.
 """
 
 import logging
-from typing import Optional
+from typing import Optional, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
@@ -112,15 +112,18 @@ class StoryAnalysisChain(BaseStoryChain):
 
     async def analyze_sentiment(self, content: str) -> str:
         """Analyze sentiment of story content"""
-        return await self._sentiment_chain.ainvoke({"content": content})
+        result = await self._sentiment_chain.ainvoke({"content": content})
+        return cast(str, result)
 
     async def classify_genre(self, content: str) -> str:
         """Classify genre of story content"""
-        return await self._genre_chain.ainvoke({"content": content})
+        result = await self._genre_chain.ainvoke({"content": content})
+        return cast(str, result)
 
     async def analyze_story(self, content: str) -> str:
         """Perform comprehensive story analysis"""
-        return await self._analysis_chain.ainvoke({"content": content})
+        result = await self._analysis_chain.ainvoke({"content": content})
+        return cast(str, result)
 
 
 class StorySummaryChain(BaseStoryChain):
@@ -182,17 +185,19 @@ class StoryImprovementChain(BaseStoryChain):
         target_audience: str = "general readers",
     ) -> str:
         """Improve a story"""
-        return await self._improvement_chain.ainvoke(
+        result = await self._improvement_chain.ainvoke(
             {
                 "content": content,
                 "focus_area": focus_area,
                 "target_audience": target_audience,
             }
         )
+        return cast(str, result)
 
     async def correct_grammar(self, content: str) -> str:
         """Correct grammar and spelling"""
-        return await self._grammar_chain.ainvoke({"content": content})
+        result = await self._grammar_chain.ainvoke({"content": content})
+        return cast(str, result)
 
     async def transform_style(
         self,
@@ -201,13 +206,14 @@ class StoryImprovementChain(BaseStoryChain):
         preserve_elements: str = "plot and characters",
     ) -> str:
         """Transform writing style"""
-        return await self._style_chain.ainvoke(
+        result = await self._style_chain.ainvoke(
             {
                 "content": content,
                 "target_style": target_style,
                 "preserve_elements": preserve_elements,
             }
         )
+        return cast(str, result)
 
 
 class StoryTranslationChain(BaseStoryChain):
@@ -268,9 +274,10 @@ class StoryCreativeChain(BaseStoryChain):
         self, content: str, ending_type: str = "happy", tone: str = "uplifting"
     ) -> str:
         """Create an alternative ending"""
-        return await self._ending_chain.ainvoke(
+        result = await self._ending_chain.ainvoke(
             {"content": content, "ending_type": ending_type, "tone": tone}
         )
+        return cast(str, result)
 
     async def generate_dialogue(
         self,
@@ -280,7 +287,7 @@ class StoryCreativeChain(BaseStoryChain):
         other_character: str = "another person",
     ) -> str:
         """Generate character dialogue"""
-        return await self._dialogue_chain.ainvoke(
+        result = await self._dialogue_chain.ainvoke(
             {
                 "character_name": character_name,
                 "character_traits": character_traits,
@@ -288,6 +295,7 @@ class StoryCreativeChain(BaseStoryChain):
                 "other_character": other_character,
             }
         )
+        return cast(str, result)
 
     async def continue_story(
         self,
@@ -296,9 +304,10 @@ class StoryCreativeChain(BaseStoryChain):
         length: str = "medium",
     ) -> str:
         """Continue an existing story"""
-        return await self._continuation_chain.ainvoke(
+        result = await self._continuation_chain.ainvoke(
             {"existing_story": existing_story, "direction": direction, "length": length}
         )
+        return cast(str, result)
 
 
 # Chain factory functions

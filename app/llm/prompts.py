@@ -5,7 +5,7 @@ Contains predefined prompt templates for various story-related tasks.
 Uses LangChain's PromptTemplate for consistent and reusable prompts.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 
@@ -287,7 +287,7 @@ def get_prompt_template(prompt_name: str) -> PromptTemplate:
     Raises:
         AttributeError: If prompt template doesn't exist
     """
-    return getattr(StoryPrompts, prompt_name.upper())
+    return cast(PromptTemplate, getattr(StoryPrompts, prompt_name.upper()))
 
 
 def get_chat_prompt_template(prompt_name: str) -> ChatPromptTemplate:
@@ -303,7 +303,7 @@ def get_chat_prompt_template(prompt_name: str) -> ChatPromptTemplate:
     Raises:
         AttributeError: If chat prompt template doesn't exist
     """
-    return getattr(ChatPrompts, prompt_name.upper())
+    return cast(ChatPromptTemplate, getattr(ChatPrompts, prompt_name.upper()))
 
 
 # Available prompt templates

@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from .chains import (
     create_story_analysis_chain,
@@ -421,11 +421,13 @@ class LLMService:
 
     def get_available_models(self) -> Dict[str, bool]:
         """Get list of available models"""
-        return self.model_factory.get_available_models()
+        result = self.model_factory.get_available_models()
+        return cast(Dict[str, bool], result)
 
     def get_usage_stats(self) -> Dict[str, Any]:
         """Get usage statistics"""
-        return self._usage_stats.copy()
+        result = self._usage_stats.copy()
+        return cast(Dict[str, Any], result)
 
     def _log_request(self, operation: str, params: Dict[str, Any]):
         """Log request for monitoring"""

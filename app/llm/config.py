@@ -237,8 +237,9 @@ class LLMConfig:
             fallback_models = task_config.get("fallback", [])
 
             for fallback_model in fallback_models:
-                if self.is_model_available(fallback_model):
-                    return fallback_model
+                fallback_model_str = str(fallback_model)
+                if self.is_model_available(fallback_model_str):
+                    return fallback_model_str
 
         # Last resort: find any available model
         for model_name in self.models.keys():
@@ -250,7 +251,8 @@ class LLMConfig:
 
     def get_provider_config(self, provider_name: str) -> Dict[str, Any]:
         """Get provider configuration"""
-        return self.providers.get(provider_name, {})
+        provider_config: Dict[str, Any] = self.providers.get(provider_name, {})
+        return provider_config
 
     def list_available_models(self) -> List[str]:
         """List all available models"""
