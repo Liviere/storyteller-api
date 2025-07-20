@@ -287,8 +287,8 @@ def test_new_config_option(self, llm_config_data):
    # Ensure all dependencies are installed
    poetry install
 
-   # Check Python path
-   PYTHONPATH=/home/livierek/projekty/story-teller poetry run pytest tests/llm/
+   # Run tests from project root directory
+   poetry run pytest tests/llm/
    ```
 
 2. **API Key Issues**

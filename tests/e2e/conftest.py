@@ -5,6 +5,8 @@ This module provides fixtures for end-to-end testing,
 combining story management and LLM functionality.
 """
 
+from pathlib import Path
+
 import pytest
 import yaml
 
@@ -12,7 +14,8 @@ import yaml
 @pytest.fixture
 def llm_config_data():
     """Load test LLM configuration data."""
-    config_path = "/home/livierek/projekty/story-teller/llm_config.yaml"
+    # Get project root directory (3 levels up from this file)
+    config_path = Path(__file__).parent.parent.parent / "llm_config.yaml"
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
 

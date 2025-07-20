@@ -5,9 +5,7 @@ This module provides fixtures specifically for testing LLM functionality,
 including mock services, test data, and configuration helpers.
 """
 
-import json
-import os
-from typing import Any, Dict, List, Optional
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -20,7 +18,8 @@ from app.llm.services import LLMService
 @pytest.fixture
 def llm_config_data():
     """Load test LLM configuration data."""
-    config_path = "/home/livierek/projekty/story-teller/llm_config.yaml"
+    # Get project root directory (3 levels up from this file)
+    config_path = Path(__file__).parent.parent.parent / "llm_config.yaml"
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
 

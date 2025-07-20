@@ -38,7 +38,7 @@ REST API for managing stories built with FastAPI and Poetry.
 1. Clone or navigate to the project directory:
 
 ```bash
-cd /home/livierek/projekty/story-teller
+cd story-teller  # or your project directory name
 ```
 
 2. Set up environment variables:
@@ -105,7 +105,7 @@ docker-compose -f docker-compose.test.yml down -v  # Clean test environment
 1. Clone or navigate to the project directory:
 
 ```bash
-cd /home/livierek/projekty/story-teller
+cd story-teller  # or your project directory name
 ```
 
 2. Install dependencies with Poetry:
