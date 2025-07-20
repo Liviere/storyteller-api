@@ -89,7 +89,7 @@ async def publish_story(story_id: int, db: Session = Depends(get_db)):
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
 
-    story.is_published = True
+    story.is_published = True  # type: ignore[assignment]
     db.commit()
     db.refresh(story)
     return {"message": "Story published successfully", "story": story}
@@ -102,7 +102,7 @@ async def unpublish_story(story_id: int, db: Session = Depends(get_db)):
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
 
-    story.is_published = False
+    story.is_published = False  # type: ignore[assignment]
     db.commit()
     db.refresh(story)
     return {"message": "Story unpublished successfully", "story": story}

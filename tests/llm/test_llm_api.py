@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
+from main import app
 
 from app.routers.llm import get_llm_service_dependency
 
@@ -23,7 +24,8 @@ class TestLLMHealthEndpoint:
     @pytest.mark.llm_mock
     def test_health_check_success(self, client: TestClient, mock_llm_service):
         """Test health check with available models."""
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        from main import app
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -41,8 +43,8 @@ class TestLLMHealthEndpoint:
             assert data["available_models"] >= 0
             assert data["total_models"] >= 0
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
     @pytest.mark.llm_mock
     def test_health_check_with_no_available_models(self, client: TestClient):
@@ -75,7 +77,7 @@ class TestLLMModelsEndpoint:
     @pytest.mark.llm_mock
     def test_list_models_success(self, client: TestClient, mock_llm_service):
         """Test successful model listing."""
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -89,8 +91,8 @@ class TestLLMModelsEndpoint:
             assert data["success"] is True
             assert isinstance(data["models"], dict)
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
 
 class TestLLMStatsEndpoint:
@@ -99,7 +101,7 @@ class TestLLMStatsEndpoint:
     @pytest.mark.llm_mock
     def test_get_stats_success(self, client: TestClient, mock_llm_service):
         """Test successful stats retrieval."""
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -119,8 +121,8 @@ class TestLLMStatsEndpoint:
             for field in expected_fields:
                 assert field in stats
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
 
 class TestLLMGenerateEndpoint:
@@ -134,7 +136,7 @@ class TestLLMGenerateEndpoint:
         request_data = sample_generation_requests[0]
 
         # Override the dependency to return our mock
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -158,8 +160,8 @@ class TestLLMGenerateEndpoint:
             mock_llm_service.generate_story.assert_called_once()
         finally:
             # Clean up the override
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
     @pytest.mark.llm_mock
     def test_generate_story_invalid_prompt(self, client: TestClient, mock_llm_service):
@@ -185,7 +187,7 @@ class TestLLMGenerateEndpoint:
         self, client: TestClient, mock_llm_service, sample_generation_requests
     ):
         """Test story generation with all sample requests."""
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -209,8 +211,8 @@ class TestLLMGenerateEndpoint:
                 sample_generation_requests
             )
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
 
 class TestLLMAnalyzeEndpoint:
@@ -223,7 +225,7 @@ class TestLLMAnalyzeEndpoint:
         """Test story analysis with valid request."""
         request_data = sample_analysis_requests[0]
 
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -248,8 +250,8 @@ class TestLLMAnalyzeEndpoint:
             # Verify mock was called
             mock_llm_service.analyze_story.assert_called_once()
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
     @pytest.mark.llm_mock
     def test_analyze_story_invalid_analysis_type(
@@ -261,7 +263,7 @@ class TestLLMAnalyzeEndpoint:
             "analysis_type": "invalid_type",
         }
 
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -269,8 +271,8 @@ class TestLLMAnalyzeEndpoint:
 
             assert response.status_code == 400
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
 
 class TestLLMSummarizeEndpoint:
@@ -283,7 +285,7 @@ class TestLLMSummarizeEndpoint:
         """Test story summarization with valid request."""
         request_data = sample_summary_requests[0]
 
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -305,8 +307,8 @@ class TestLLMSummarizeEndpoint:
             # Verify mock was called
             mock_llm_service.summarize_story.assert_called_once()
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
     @pytest.mark.llm_mock
     def test_summarize_story_invalid_length(
@@ -318,7 +320,7 @@ class TestLLMSummarizeEndpoint:
             "summary_length": "invalid_length",
         }
 
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -326,8 +328,8 @@ class TestLLMSummarizeEndpoint:
 
             assert response.status_code == 400
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
 
 class TestLLMImproveEndpoint:
@@ -340,7 +342,7 @@ class TestLLMImproveEndpoint:
         """Test story improvement with valid request."""
         request_data = sample_improvement_requests[0]
 
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -364,8 +366,8 @@ class TestLLMImproveEndpoint:
             # Verify mock was called
             mock_llm_service.improve_story.assert_called_once()
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
 
     @pytest.mark.llm_mock
     def test_improve_story_invalid_type(
@@ -377,7 +379,7 @@ class TestLLMImproveEndpoint:
             "improvement_type": "invalid_type",
         }
 
-        client.app.dependency_overrides[get_llm_service_dependency] = (
+        app.dependency_overrides[get_llm_service_dependency] = (
             lambda: mock_llm_service
         )
         try:
@@ -385,5 +387,5 @@ class TestLLMImproveEndpoint:
 
             assert response.status_code == 400
         finally:
-            if get_llm_service_dependency in client.app.dependency_overrides:
-                del client.app.dependency_overrides[get_llm_service_dependency]
+            if get_llm_service_dependency in app.dependency_overrides:
+                del app.dependency_overrides[get_llm_service_dependency]
