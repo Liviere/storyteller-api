@@ -59,13 +59,14 @@ def create_story_task(self, story_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @celery_app.task(bind=True, name="stories.update_story")
-def update_story_task(self, story_id: int, story_data: Dict[str, Any]) -> Dict[str, Any]:
+def update_story_task(self, story_id: int, story_data: Dict[str, Any], no_retry: bool = False) -> Dict[str, Any]:
     """
     Update an existing story asynchronously
     
     Args:
         story_id: ID of the story to update
         story_data: Dictionary containing update data
+        no_retry: If True, disables retry behavior
         
     Returns:
         Dictionary with updated story data
@@ -104,16 +105,20 @@ def update_story_task(self, story_id: int, story_data: Dict[str, Any]) -> Dict[s
             db.close()
             
     except Exception as exc:
-        self.retry(countdown=60, max_retries=3, exc=exc)
+        if not no_retry:
+            self.retry(countdown=60, max_retries=3, exc=exc)
+        else:
+            raise exc
 
 
 @celery_app.task(bind=True, name="stories.delete_story")
-def delete_story_task(self, story_id: int) -> Dict[str, Any]:
+def delete_story_task(self, story_id: int, no_retry: bool = False) -> Dict[str, Any]:
     """
     Delete a story asynchronously
     
     Args:
         story_id: ID of the story to delete
+        no_retry: If True, disables retry behavior
         
     Returns:
         Dictionary with deletion confirmation
@@ -143,7 +148,10 @@ def delete_story_task(self, story_id: int) -> Dict[str, Any]:
             db.close()
             
     except Exception as exc:
-        self.retry(countdown=60, max_retries=3, exc=exc)
+        if not no_retry:
+            self.retry(countdown=60, max_retries=3, exc=exc)
+        else:
+            raise exc
 
 
 @celery_app.task(bind=True, name="stories.patch_story")

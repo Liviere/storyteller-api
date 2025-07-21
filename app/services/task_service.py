@@ -100,19 +100,38 @@ class TaskService:
         )
         return task.id
     
-    def update_story_async(self, story_id: int, story_data: Dict[str, Any]) -> str:
-        """Submit story update task"""
+    def update_story_async(self, story_id: int, story_data: Dict[str, Any], retry_config: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Submit story update task
+        
+        Args:
+            story_id: ID of the story to update
+            story_data: Data to update
+            retry_config: Optional retry configuration (for testing)
+                         Example: {"max_retries": 0, "countdown": 1}
+        """
+        no_retry = retry_config is not None and retry_config.get("retry") is False
+            
         task = self.celery_app.send_task(
             'stories.update_story',
-            args=[story_id, story_data]
+            args=[story_id, story_data, no_retry]
         )
         return task.id
     
-    def delete_story_async(self, story_id: int) -> str:
-        """Submit story deletion task"""
+    def delete_story_async(self, story_id: int, retry_config: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Submit story deletion task
+        
+        Args:
+            story_id: ID of the story to delete
+            retry_config: Optional retry configuration (for testing)
+                         Example: {"max_retries": 0, "countdown": 1}
+        """
+        no_retry = retry_config is not None and retry_config.get("retry") is False
+            
         task = self.celery_app.send_task(
             'stories.delete_story',
-            args=[story_id]
+            args=[story_id, no_retry]
         )
         return task.id
     

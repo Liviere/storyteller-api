@@ -1,10 +1,14 @@
 """
 Test configuration and fixtures for Story Teller API tests.
+
+This module provides common fixtures and configuration for all tests,
+including database setup, test client, and Celery testing utilities.
 """
 
 import os
 import tempfile
 from typing import Generator
+from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +17,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database.connection import get_db
 from app.models.story import Base
+from app.services.task_service import get_task_service
 from main import app
 
 
@@ -131,3 +136,67 @@ def sample_stories_data():
             "is_published": True,
         },
     ]
+
+
+# Celery testing fixtures
+@pytest.fixture
+def mock_task_service():
+    """Mock TaskService for testing async endpoints."""
+    mock_service = Mock()
+    mock_service.generate_story_async.return_value = "mock-task-id-123"
+    mock_service.analyze_story_async.return_value = "mock-task-id-456" 
+    mock_service.summarize_story_async.return_value = "mock-task-id-789"
+    mock_service.improve_story_async.return_value = "mock-task-id-abc"
+    mock_service.create_story_async.return_value = "mock-story-task-123"
+    mock_service.update_story_async.return_value = "mock-story-task-456"
+    mock_service.delete_story_async.return_value = "mock-story-task-789"
+    mock_service.patch_story_async.return_value = "mock-story-task-abc"
+    
+    # Mock status and result methods
+    mock_service.get_task_status.return_value = {
+        "task_id": "mock-task-id",
+        "status": "SUCCESS", 
+        "result": {"success": True, "data": "mock result"},
+        "successful": True,
+        "failed": False
+    }
+    mock_service.get_task_result.return_value = {"success": True, "data": "mock result"}
+    mock_service.cancel_task.return_value = True
+    
+    return mock_service
+
+
+@pytest.fixture
+def override_task_service(mock_task_service):
+    """Override TaskService dependency with mock."""
+    app.dependency_overrides[get_task_service] = lambda: mock_task_service
+    yield mock_task_service
+    if get_task_service in app.dependency_overrides:
+        del app.dependency_overrides[get_task_service]
+
+
+# Command line options for pytest
+def pytest_addoption(parser):
+    """Add custom command line options."""
+    parser.addoption(
+        "--integration",
+        action="store_true", 
+        default=False,
+        help="Run integration tests"
+    )
+    parser.addoption(
+        "--celery",
+        action="store_true",
+        default=False, 
+        help="Run tests requiring Celery worker"
+    )
+
+
+def pytest_configure(config):
+    """Configure pytest with custom settings."""
+    config.addinivalue_line(
+        "markers", "integration: mark test as integration test"
+    )
+    config.addinivalue_line(
+        "markers", "celery_integration: mark test as requiring Celery worker"
+    )

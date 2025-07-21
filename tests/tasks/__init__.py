@@ -1,0 +1,1 @@
+# Testy dla komponentów Celery

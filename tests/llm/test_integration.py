@@ -68,8 +68,12 @@ class TestLLMGenerationIntegration:
             # Should either succeed or fail gracefully
             if response.status_code == 200:
                 data = response.json()
-                assert len(data["story"]) > 50  # Reasonable story length
-                assert data["metadata"]["model_used"] == model
+                # Async API returns task info instead of direct story
+                assert "task_id" in data
+                assert "status" in data  
+                assert "message" in data
+                assert "estimated_time" in data
+                assert data["status"] == "PENDING"
             else:
                 # If it fails, it should be a known error (e.g., model unavailable)
                 assert response.status_code in [400, 500, 503]
@@ -101,7 +105,12 @@ class TestLLMAnalysisIntegration:
 
             if response.status_code == 200:
                 data = response.json()
-                assert len(data["analysis"]) > 10  # Reasonable analysis length
+                # Async API returns task info instead of direct analysis
+                assert "task_id" in data
+                assert "status" in data
+                assert "message" in data
+                assert "estimated_time" in data
+                assert data["status"] == "PENDING"
             else:
                 assert response.status_code in [400, 500, 503]
 
@@ -132,7 +141,12 @@ class TestLLMSummarizationIntegration:
 
             if response.status_code == 200:
                 data = response.json()
-                assert len(data["summary"]) > 10  # Reasonable summary length
+                # Async API returns task info instead of direct summary
+                assert "task_id" in data
+                assert "status" in data
+                assert "message" in data
+                assert "estimated_time" in data
+                assert data["status"] == "PENDING"
             else:
                 assert response.status_code in [400, 500, 503]
 
@@ -163,7 +177,12 @@ class TestLLMImprovementIntegration:
 
             if response.status_code == 200:
                 data = response.json()
-                assert len(data["improved_story"]) > 50  # Reasonable story length
+                # Async API returns task info instead of direct improved story
+                assert "task_id" in data
+                assert "status" in data
+                assert "message" in data
+                assert "estimated_time" in data
+                assert data["status"] == "PENDING"
             else:
                 assert response.status_code in [400, 500, 503]
 
@@ -194,33 +213,51 @@ class TestLLMEndToEndWorkflows:
         if generate_response.status_code != 200:
             pytest.skip("Story generation failed, skipping workflow test")
 
-        story = generate_response.json()["story"]
+        # Async API returns task info, not immediate story
+        task_data = generate_response.json()
+        assert "task_id" in task_data
+        assert "status" in task_data
+        assert task_data["status"] == "PENDING"
+        
+        # For integration test, we verify async workflow works  
+        # (Full end-to-end testing with task completion would require Celery worker)
+        
+        # Step 2: Test that task endpoints exist and accept valid input
+        # Using a sample story content for analysis since we can't wait for task completion
+        sample_story = "Once upon a time, there was a brave knight who fought dragons."
 
-        # Step 2: Analyze the story
+        # Step 2: Analyze using sample story (async API returns task info)
         analyze_response = client.post(
-            "/api/v1/llm/analyze", json={"content": story, "analysis_type": "full"}
+            "/api/v1/llm/analyze", json={"content": sample_story, "analysis_type": "full"}
         )
 
         if analyze_response.status_code == 200:
-            analysis = analyze_response.json()
-            assert "analysis" in analysis
+            analysis_task = analyze_response.json()
+            assert "task_id" in analysis_task
+            assert "status" in analysis_task
+            assert analysis_task["status"] == "PENDING"
 
-        # Step 3: Summarize the story
+        # Step 3: Summarize using sample story (async API returns task info)
         summarize_response = client.post(
-            "/api/v1/llm/summarize", json={"content": story, "summary_length": "brief"}
+            "/api/v1/llm/summarize", json={"content": sample_story, "summary_length": "brief"}
         )
 
         if summarize_response.status_code == 200:
-            summary = summarize_response.json()
-            assert "summary" in summary
+            summary_task = summarize_response.json()
+            assert "task_id" in summary_task
+            assert "status" in summary_task
+            assert summary_task["status"] == "PENDING"
 
-        # Step 4: Improve the story
+        # Step 4: Improve using sample story (async API returns task info)
         improve_response = client.post(
             "/api/v1/llm/improve",
-            json={"content": story, "improvement_type": "general"},
+            json={"content": sample_story, "improvement_type": "general"},
         )
 
         if improve_response.status_code == 200:
-            improved = improve_response.json()
-            assert "improved_story" in improved
-            assert improved["original_story"] == story
+            improve_task = improve_response.json()
+            assert "task_id" in improve_task
+            assert "status" in improve_task
+            assert improve_task["status"] == "PENDING"
+            
+        # Workflow test validates that all async endpoints accept input and return task IDs

@@ -72,12 +72,19 @@ async def get_story(story_id: int, db: Session = Depends(get_db)):
 async def update_story(
     story_id: int, 
     story_update: StoryUpdate, 
-    task_service: TaskService = Depends(get_task_service)
+    task_service: TaskService = Depends(get_task_service),
+    no_retry: bool = Query(False, description="Disable task retry")
 ):
     """Update a specific story asynchronously"""
     try:
         story_data = story_update.model_dump(exclude_unset=True)
-        task_id = task_service.update_story_async(story_id, story_data)
+        
+        # Configure retry behavior for testing
+        retry_config = None
+        if no_retry:
+            retry_config = {"retry": False}
+            
+        task_id = task_service.update_story_async(story_id, story_data, retry_config)
         
         return TaskResponse(
             task_id=task_id,
@@ -96,11 +103,17 @@ async def update_story(
 @router.delete("/stories/{story_id}", response_model=TaskResponse)
 async def delete_story(
     story_id: int, 
-    task_service: TaskService = Depends(get_task_service)
+    task_service: TaskService = Depends(get_task_service),
+    no_retry: bool = Query(False, description="Disable task retry")
 ):
     """Delete a specific story asynchronously"""
     try:
-        task_id = task_service.delete_story_async(story_id)
+        # Configure retry behavior for testing
+        retry_config = None
+        if no_retry:
+            retry_config = {"retry": False}
+            
+        task_id = task_service.delete_story_async(story_id, retry_config)
         
         return TaskResponse(
             task_id=task_id,

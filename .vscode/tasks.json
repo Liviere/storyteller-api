@@ -157,6 +157,97 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "Poetry: Run Task Service Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/tasks/test_task_service.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Task API Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/tasks/test_tasks_api.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run All Task Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/tasks/ -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Async LLM API Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/llm/test_llm_api_async.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Celery Integration Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/tasks/test_celery_integration.py -v -m celery_integration",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Stories Celery Integration Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/stories/test_integration_celery.py -v -m celery_integration",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run LLM Celery Integration Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/llm/test_integration_celery.py -v -m celery_integration",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run All Celery Integration Tests",
+			"type": "shell",
+			"command": "poetry run pytest -v -m celery_integration",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Tests Without Celery Integration",
+			"type": "shell",
+			"command": "poetry run pytest -m \"not celery_integration\" -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Fast Tests Only",
+			"type": "shell",
+			"command": "poetry run pytest -m \"not slow and not llm_integration and not celery_integration\" -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Stories Async Integration Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/stories/test_integration_async.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run E2E Async Workflow Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/e2e/test_workflows_async.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run All New Async Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/tasks/ tests/llm/test_llm_api_async.py tests/stories/test_integration_async.py tests/e2e/test_workflows_async.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
 			"label": "Poetry: Check Outdated Packages",
 			"type": "shell",
 			"command": "poetry show --outdated",
