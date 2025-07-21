@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelProvider(str, Enum):
@@ -36,8 +36,7 @@ class ModelConfig(BaseModel):
     presence_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
     timeout: int = Field(default=60, ge=1)
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class LLMConfig:
