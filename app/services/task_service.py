@@ -91,6 +91,39 @@ class TaskService:
             "registered": inspect.registered(),
         }
     
+    # Story-related task helpers
+    def create_story_async(self, story_data: Dict[str, Any]) -> str:
+        """Submit story creation task"""
+        task = self.celery_app.send_task(
+            'stories.create_story',
+            args=[story_data]
+        )
+        return task.id
+    
+    def update_story_async(self, story_id: int, story_data: Dict[str, Any]) -> str:
+        """Submit story update task"""
+        task = self.celery_app.send_task(
+            'stories.update_story',
+            args=[story_id, story_data]
+        )
+        return task.id
+    
+    def delete_story_async(self, story_id: int) -> str:
+        """Submit story deletion task"""
+        task = self.celery_app.send_task(
+            'stories.delete_story',
+            args=[story_id]
+        )
+        return task.id
+    
+    def patch_story_async(self, story_id: int, patch_data: Dict[str, Any]) -> str:
+        """Submit story patch task"""
+        task = self.celery_app.send_task(
+            'stories.patch_story',
+            args=[story_id, patch_data]
+        )
+        return task.id
+    
 
 # Global task service instance
 task_service = TaskService()
