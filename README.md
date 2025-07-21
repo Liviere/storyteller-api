@@ -13,6 +13,9 @@ REST API for managing stories built with FastAPI and Poetry.
 - **Story improvement (grammar, style, general quality enhancement)**
 - **Support for multiple LLM providers (OpenAI, DeepInfra, Any OpenAI-compatible API)**
 - **LLM usage statistics and health monitoring**
+- **Asynchronous task processing with Celery and Redis**
+- **Background task management for time-consuming operations**
+- **Task status monitoring and result retrieval**
 - **MySQL database with SQLAlchemy ORM (with Docker support)**
 - **SQLite fallback for development**
 - **Error monitoring and tracking with Sentry**
@@ -60,11 +63,25 @@ This will start:
 - FastAPI application on port 8080
 - phpMyAdmin on port 8081
 
+For Celery task processing, also start Redis and Celery workers:
+
+```bash
+# Start Redis for Celery
+./celery-setup.sh start
+
+# Start Celery worker (in another terminal)
+./celery-setup.sh worker
+
+# Optional: Start Flower monitoring
+./celery-setup.sh flower  # Available at http://localhost:5555
+```
+
 4. Access the application:
 
 - API: http://localhost:8080
 - API Documentation: http://localhost:8080/docs
 - Database Admin: http://localhost:8081
+- Task Monitoring (if Flower started): http://localhost:5555
 
 #### Docker Commands
 
@@ -90,6 +107,13 @@ This will start:
 # Test environment (isolated MySQL for testing)
 docker-compose -f docker-compose.test.yml up -d    # Start test database
 docker-compose -f docker-compose.test.yml down -v  # Clean test environment
+
+# Celery management
+./celery-setup.sh start     # Start Redis
+./celery-setup.sh stop      # Stop Redis
+./celery-setup.sh worker    # Start Celery worker
+./celery-setup.sh flower    # Start monitoring interface
+./celery-setup.sh status    # Check system status
 ```
 
 ### Option 2: Local Development Setup
@@ -184,10 +208,10 @@ export DEEPINFRA_API_KEY="your-deepinfra-key"
 ### LLM API Endpoints
 
 - **Health check**: `GET /api/v1/llm/health`
-- **Generate story**: `POST /api/v1/llm/generate`
-- **Analyze text**: `POST /api/v1/llm/analyze`
-- **Summarize content**: `POST /api/v1/llm/summarize`
-- **Improve story**: `POST /api/v1/llm/improve`
+- **Generate story**: `POST /api/v1/llm/generate` _(async task)_
+- **Analyze text**: `POST /api/v1/llm/analyze` _(async task)_
+- **Summarize content**: `POST /api/v1/llm/summarize` _(async task)_
+- **Improve story**: `POST /api/v1/llm/improve` _(async task)_
 - **Available models**: `GET /api/v1/llm/models`
 - **Usage statistics**: `GET /api/v1/llm/stats`
 
