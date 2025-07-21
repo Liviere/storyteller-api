@@ -359,6 +359,52 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "Celery: Start Redis",
+			"type": "shell",
+			"command": "./celery-setup.sh start",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Celery: Stop Redis",
+			"type": "shell",
+			"command": "./celery-setup.sh stop",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Celery: Start Worker",
+			"type": "shell",
+			"command": "./celery-setup.sh worker",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Celery: Start Flower Monitoring",
+			"type": "shell",
+			"command": "./celery-setup.sh flower",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Celery: Show Status",
+			"type": "shell",
+			"command": "./celery-setup.sh status",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Celery: Show Logs",
+			"type": "shell",
+			"command": "./celery-setup.sh logs",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
 			"label": "Complete: Full Test Suite with MySQL",
 			"dependsOrder": "sequence",
 			"dependsOn": [
