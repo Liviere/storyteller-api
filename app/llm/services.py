@@ -8,7 +8,7 @@ This is the primary entry point for the API to interact with LLM capabilities.
 import asyncio
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional, cast
 
 from .chains import (
@@ -91,8 +91,8 @@ class LLMService:
                     "style": style,
                     "model_used": model_name
                     or self.config.get_task_model("story_generation"),
-                    "generation_time": datetime.utcnow().isoformat(),
-                    "word_count": len(story.split()) if story else 0,
+                    "generation_time": datetime.now(UTC).isoformat(),
+                    "word_count": len(story.split()) if isinstance(story, str) and story else 0,
                 },
             }
 
@@ -143,7 +143,7 @@ class LLMService:
                     "content_length": len(content),
                     "word_count": len(content.split()),
                     "model_used": model_name or self.config.get_task_model("analysis"),
-                    "analysis_time": datetime.utcnow().isoformat(),
+                    "analysis_time": datetime.now(UTC).isoformat(),
                 },
             }
 
@@ -186,7 +186,7 @@ class LLMService:
                 "metadata": {
                     "original_length": len(content),
                     "original_word_count": len(content.split()),
-                    "summary_word_count": len(summary.split()) if summary else 0,
+                    "summary_word_count": len(summary.split()) if isinstance(summary, str) and summary else 0,
                     "compression_ratio": (
                         len(summary) / len(content) if content and summary else 0
                     ),
@@ -194,7 +194,7 @@ class LLMService:
                     "focus": focus,
                     "model_used": model_name
                     or self.config.get_task_model("summarization"),
-                    "summary_time": datetime.utcnow().isoformat(),
+                    "summary_time": datetime.now(UTC).isoformat(),
                 },
             }
 
@@ -251,10 +251,10 @@ class LLMService:
                     "focus_area": focus_area,
                     "target_audience": target_audience,
                     "original_word_count": len(content.split()),
-                    "improved_word_count": len(improved.split()) if improved else 0,
+                    "improved_word_count": len(improved.split()) if isinstance(improved, str) and improved else 0,
                     "model_used": model_name
                     or self.config.get_task_model("improvement"),
-                    "improvement_time": datetime.utcnow().isoformat(),
+                    "improvement_time": datetime.now(UTC).isoformat(),
                 },
             }
 
@@ -306,11 +306,11 @@ class LLMService:
                     "preserve_style": preserve_style,
                     "original_word_count": len(content.split()),
                     "translated_word_count": (
-                        len(translated.split()) if translated else 0
+                        len(translated.split()) if isinstance(translated, str) and translated else 0
                     ),
                     "model_used": model_name
                     or self.config.get_task_model("translation"),
-                    "translation_time": datetime.utcnow().isoformat(),
+                    "translation_time": datetime.now(UTC).isoformat(),
                 },
             }
 
@@ -355,10 +355,10 @@ class LLMService:
                     "ending_type": ending_type,
                     "tone": tone,
                     "original_word_count": len(content.split()),
-                    "ending_word_count": len(ending.split()) if ending else 0,
+                    "ending_word_count": len(ending.split()) if isinstance(ending, str) and ending else 0,
                     "model_used": model_name
                     or self.config.get_task_model("story_generation"),
-                    "creation_time": datetime.utcnow().isoformat(),
+                    "creation_time": datetime.now(UTC).isoformat(),
                 },
             }
 
@@ -404,11 +404,11 @@ class LLMService:
                     "length": length,
                     "original_word_count": len(existing_story.split()),
                     "continuation_word_count": (
-                        len(continuation.split()) if continuation else 0
+                        len(continuation.split()) if isinstance(continuation, str) and continuation else 0
                     ),
                     "model_used": model_name
                     or self.config.get_task_model("story_generation"),
-                    "continuation_time": datetime.utcnow().isoformat(),
+                    "continuation_time": datetime.now(UTC).isoformat(),
                 },
             }
 
@@ -441,7 +441,7 @@ class LLMService:
     def _update_usage_stats(self, success: bool = True):
         """Update usage statistics"""
         self._usage_stats["requests_count"] += 1
-        self._usage_stats["last_request"] = datetime.utcnow().isoformat()
+        self._usage_stats["last_request"] = datetime.now(UTC).isoformat()
         if not success:
             self._usage_stats["errors_count"] += 1
 
