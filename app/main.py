@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database.connection import create_tables
 from app.routers.llm import router as llm_router
 from app.routers.stories import router as stories_router
+from app.routers.tasks import router as tasks_router
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(stories_router, prefix="/api/v1", tags=["stories"])
     app.include_router(llm_router)
+    app.include_router(tasks_router)
 
     @app.get("/")
     async def root():
