@@ -66,23 +66,93 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Poetry: Run Unit Tests Only",
+			"label": "Poetry: Run Shared Component Tests",
 			"type": "shell",
-			"command": "poetry run pytest tests/unit/ -v",
+			"command": "poetry run pytest tests/shared/ -v",
 			"group": "test",
 			"problemMatcher": []
 		},
 		{
-			"label": "Poetry: Run API Tests Only",
+			"label": "Poetry: Run Stories Tests",
 			"type": "shell",
-			"command": "poetry run pytest tests/integration/test_api.py -v",
+			"command": "poetry run pytest tests/stories/ -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Stories Unit Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/stories/test_unit.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Stories Integration Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/stories/test_integration.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run LLM Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/llm/ -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run LLM Unit Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/llm/test_unit.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run LLM Integration Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/llm/test_integration.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run LLM API Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/llm/test_llm_api.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run E2E Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/e2e/ -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run E2E Workflow Tests",
+			"type": "shell",
+			"command": "poetry run pytest tests/e2e/test_workflows.py -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Tests Without LLM Integration",
+			"type": "shell",
+			"command": "poetry run pytest -m \"not llm_integration\" -v",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Poetry: Run Unit Tests Only",
+			"type": "shell",
+			"command": "poetry run pytest tests/shared/ tests/stories/test_unit.py tests/llm/test_unit.py -v",
 			"group": "test",
 			"problemMatcher": []
 		},
 		{
 			"label": "Poetry: Run Integration Tests Only",
 			"type": "shell",
-			"command": "poetry run pytest tests/integration/ -v",
+			"command": "poetry run pytest tests/stories/test_integration.py tests/llm/test_integration.py tests/llm/test_llm_api.py tests/e2e/ -v",
 			"group": "test",
 			"problemMatcher": []
 		},
@@ -117,7 +187,7 @@
 		{
 			"label": "Locust: Start Web Interface",
 			"type": "shell",
-			"command": "poetry run locust -f tests/performance/locustfile.py --host=http://localhost:8080",
+			"command": "poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080",
 			"group": "test",
 			"isBackground": true,
 			"problemMatcher": []
@@ -125,42 +195,42 @@
 		{
 			"label": "Locust: Light Load Test",
 			"type": "shell",
-			"command": "poetry run locust -f tests/performance/locustfile.py --host=http://localhost:8080 --headless --users 10 --spawn-rate 2 --run-time 2m --html reports/performance/light_load_report.html",
+			"command": "poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 --headless --users 10 --spawn-rate 2 --run-time 2m --html reports/performance/light_load_report.html",
 			"group": "test",
 			"problemMatcher": []
 		},
 		{
 			"label": "Locust: Medium Load Test",
 			"type": "shell",
-			"command": "poetry run locust -f tests/performance/locustfile.py --host=http://localhost:8080 --headless --users 50 --spawn-rate 5 --run-time 5m --html reports/performance/medium_load_report.html",
+			"command": "poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 --headless --users 50 --spawn-rate 5 --run-time 5m --html reports/performance/medium_load_report.html",
 			"group": "test",
 			"problemMatcher": []
 		},
 		{
 			"label": "Locust: Heavy Load Test",
 			"type": "shell",
-			"command": "poetry run locust -f tests/performance/locustfile.py --host=http://localhost:8080 --headless --users 200 --spawn-rate 10 --run-time 10m --html reports/performance/heavy_load_report.html",
+			"command": "poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 --headless --users 200 --spawn-rate 10 --run-time 10m --html reports/performance/heavy_load_report.html",
 			"group": "test",
 			"problemMatcher": []
 		},
 		{
 			"label": "Locust: Stress Test",
 			"type": "shell",
-			"command": "poetry run locust -f tests/performance/locustfile.py --host=http://localhost:8080 --headless --users 500 --spawn-rate 20 --run-time 5m --html reports/performance/stress_test_report.html",
+			"command": "poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 --headless --users 500 --spawn-rate 20 --run-time 5m --html reports/performance/stress_test_report.html",
 			"group": "test",
 			"problemMatcher": []
 		},
 		{
 			"label": "Locust: Spike Test",
 			"type": "shell",
-			"command": "poetry run locust -f tests/performance/locustfile.py --host=http://localhost:8080 --headless --users 100 --spawn-rate 50 --run-time 3m --html reports/performance/spike_test_report.html",
+			"command": "poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 --headless --users 100 --spawn-rate 50 --run-time 3m --html reports/performance/spike_test_report.html",
 			"group": "test",
 			"problemMatcher": []
 		},
 		{
 			"label": "Locust: Endurance Test",
 			"type": "shell",
-			"command": "poetry run locust -f tests/performance/locustfile.py --host=http://localhost:8080 --headless --users 30 --spawn-rate 3 --run-time 30m --html reports/performance/endurance_test_report.html",
+			"command": "poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 --headless --users 30 --spawn-rate 3 --run-time 30m --html reports/performance/endurance_test_report.html",
 			"group": "test",
 			"problemMatcher": []
 		},
