@@ -13,7 +13,7 @@ router = APIRouter()
 @router.post("/stories/", response_model=StoryResponse)
 async def create_story(story: StoryCreate, db: Session = Depends(get_db)):
     """Create a new story"""
-    db_story = Story(**story.dict())
+    db_story = Story(**story.model_dump())
     db.add(db_story)
     db.commit()
     db.refresh(db_story)
@@ -61,7 +61,7 @@ async def update_story(
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
 
-    update_data = story_update.dict(exclude_unset=True)
+    update_data = story_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(story, field, value)
 
