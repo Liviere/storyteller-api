@@ -96,7 +96,7 @@ docker-compose -f docker-compose.test.yml down -v  # Clean test environment
 
 #### Prerequisites
 
-- Python 3.8.1+
+- Python 3.11+
 - Poetry (https://python-poetry.org/docs/#installation)
 - MySQL (optional, defaults to SQLite)
 
