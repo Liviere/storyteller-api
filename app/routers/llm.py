@@ -12,6 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from ..llm.services import get_llm_service
+from ..schemas.async_responses import TaskResponse
+from ..services.task_service import get_task_service, TaskService
 
 logger = logging.getLogger(__name__)
 
@@ -146,51 +148,65 @@ def get_llm_service_dependency():
 ###################################
 
 
-@router.post("/generate", response_model=StoryGenerationResponse)
+@router.post("/generate", response_model=TaskResponse)
 async def generate_story(
-    request: StoryGenerationRequest, llm_service=Depends(get_llm_service_dependency)
+    request: StoryGenerationRequest, 
+    task_service: TaskService = Depends(get_task_service)
 ):
     """
-    Generate a new story based on prompt and parameters.
+    Generate a new story based on prompt and parameters asynchronously.
 
     This endpoint creates an original story using AI models based on the provided
     prompt, genre, and style preferences.
     """
     try:
-        # Extract model parameters
-        model_params = {}
+        # Prepare task parameters
+        task_params = {
+            "prompt": request.prompt,
+            "genre": request.genre,
+            "length": request.length,
+            "style": request.style,
+        }
+        
+        if request.model_name:
+            task_params["model_name"] = request.model_name
         if request.temperature is not None:
-            model_params["temperature"] = request.temperature
+            task_params["temperature"] = request.temperature
         if request.max_tokens is not None:
-            model_params["max_tokens"] = request.max_tokens
+            task_params["max_tokens"] = request.max_tokens
 
-        # Generate story
-        result = await llm_service.generate_story(
-            prompt=request.prompt,
-            genre=request.genre,
-            length=request.length,
-            style=request.style,
-            model_name=request.model_name,
-            **model_params,
-        )
+        # Submit task
+        task_id = task_service.generate_story_async(**task_params)
+        
+        # Estimate time based on length
+        estimated_time = {
+            "short": 60,
+            "medium": 120,
+            "long": 300
+        }.get(request.length, 120)
 
-        return StoryGenerationResponse(
-            story=result["story"], metadata=result["metadata"]
+        return TaskResponse(
+            task_id=task_id,
+            status="PENDING",
+            message="Story generation task submitted successfully",
+            estimated_time=estimated_time
         )
 
     except Exception as e:
-        logger.error(f"Story generation failed: {str(e)}")
+        logger.error(f"Story generation task submission failed: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Story generation failed: {str(e)}"
+            status_code=500, 
+            detail=f"Story generation task submission failed: {str(e)}"
         )
 
 
-@router.post("/analyze", response_model=StoryAnalysisResponse)
+@router.post("/analyze", response_model=TaskResponse)
 async def analyze_story(
-    request: StoryAnalysisRequest, llm_service=Depends(get_llm_service_dependency)
+    request: StoryAnalysisRequest, 
+    task_service: TaskService = Depends(get_task_service)
 ):
     """
-    Analyze story content for various aspects.
+    Analyze story content for various aspects asynchronously.
 
     Provides sentiment analysis, genre classification, or comprehensive story analysis.
     """
@@ -203,32 +219,42 @@ async def analyze_story(
                 detail=f"Invalid analysis type. Must be one of: {valid_types}",
             )
 
-        # Analyze story
-        result = await llm_service.analyze_story(
-            content=request.content,
-            analysis_type=request.analysis_type,
-            model_name=request.model_name,
-        )
+        # Prepare task parameters
+        task_params = {
+            "content": request.content,
+            "analysis_type": request.analysis_type,
+        }
+        
+        if request.model_name:
+            task_params["model_name"] = request.model_name
 
-        return StoryAnalysisResponse(
-            analysis=result["analysis"],
-            analysis_type=result["analysis_type"],
-            metadata=result["metadata"],
+        # Submit task
+        task_id = task_service.analyze_story_async(**task_params)
+
+        return TaskResponse(
+            task_id=task_id,
+            status="PENDING",
+            message="Story analysis task submitted successfully",
+            estimated_time=45
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Story analysis failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Story analysis failed: {str(e)}")
+        logger.error(f"Story analysis task submission failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Story analysis task submission failed: {str(e)}"
+        )
 
 
-@router.post("/summarize", response_model=StorySummaryResponse)
+@router.post("/summarize", response_model=TaskResponse)
 async def summarize_story(
-    request: StorySummaryRequest, llm_service=Depends(get_llm_service_dependency)
+    request: StorySummaryRequest, 
+    task_service: TaskService = Depends(get_task_service)
 ):
     """
-    Create a summary of story content.
+    Create a summary of story content asynchronously.
 
     Generates concise summaries focusing on main plot points and characters.
     """
@@ -241,33 +267,43 @@ async def summarize_story(
                 detail=f"Invalid summary length. Must be one of: {valid_lengths}",
             )
 
-        # Summarize story
-        result = await llm_service.summarize_story(
-            content=request.content,
-            summary_length=request.summary_length,
-            focus=request.focus,
-            model_name=request.model_name,
-        )
+        # Prepare task parameters
+        task_params = {
+            "content": request.content,
+            "summary_length": request.summary_length,
+            "focus": request.focus,
+        }
+        
+        if request.model_name:
+            task_params["model_name"] = request.model_name
 
-        return StorySummaryResponse(
-            summary=result["summary"], metadata=result["metadata"]
+        # Submit task
+        task_id = task_service.summarize_story_async(**task_params)
+
+        return TaskResponse(
+            task_id=task_id,
+            status="PENDING",
+            message="Story summarization task submitted successfully",
+            estimated_time=30
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Story summarization failed: {str(e)}")
+        logger.error(f"Story summarization task submission failed: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Story summarization failed: {str(e)}"
+            status_code=500, 
+            detail=f"Story summarization task submission failed: {str(e)}"
         )
 
 
-@router.post("/improve", response_model=StoryImprovementResponse)
+@router.post("/improve", response_model=TaskResponse)
 async def improve_story(
-    request: StoryImprovementRequest, llm_service=Depends(get_llm_service_dependency)
+    request: StoryImprovementRequest, 
+    task_service: TaskService = Depends(get_task_service)
 ):
     """
-    Improve story content.
+    Improve story content asynchronously.
 
     Enhances stories through grammar correction, style transformation,
     or general quality improvements.
@@ -281,33 +317,36 @@ async def improve_story(
                 detail=f"Invalid improvement type. Must be one of: {valid_types}",
             )
 
-        # Prepare additional parameters for style transformation
-        kwargs = {}
+        # Prepare task parameters
+        task_params = {
+            "content": request.content,
+            "improvement_type": request.improvement_type,
+            "focus_area": request.focus_area,
+            "target_audience": request.target_audience,
+        }
+        
+        if request.model_name:
+            task_params["model_name"] = request.model_name
         if request.improvement_type == "style" and request.target_style:
-            kwargs["target_style"] = request.target_style
+            task_params["target_style"] = request.target_style
 
-        # Improve story
-        result = await llm_service.improve_story(
-            content=request.content,
-            improvement_type=request.improvement_type,
-            focus_area=request.focus_area,
-            target_audience=request.target_audience,
-            model_name=request.model_name,
-            **kwargs,
-        )
+        # Submit task
+        task_id = task_service.improve_story_async(**task_params)
 
-        return StoryImprovementResponse(
-            improved_story=result["improved_story"],
-            original_story=result["original_story"],
-            metadata=result["metadata"],
+        return TaskResponse(
+            task_id=task_id,
+            status="PENDING",
+            message="Story improvement task submitted successfully",
+            estimated_time=90
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Story improvement failed: {str(e)}")
+        logger.error(f"Story improvement task submission failed: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Story improvement failed: {str(e)}"
+            status_code=500, 
+            detail=f"Story improvement task submission failed: {str(e)}"
         )
 
 

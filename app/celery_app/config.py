@@ -42,12 +42,14 @@ class CeleryConfig:
     # Queue configuration with priority
     task_routes = {
         'app.celery_app.tasks.stories.*': {'queue': 'stories'},
+        'app.celery_app.tasks.llm.*': {'queue': 'llm'},
     }
     
     task_default_queue = 'default'
     task_queues = [
         Queue('default', Exchange('default'), routing_key='default'),
         Queue('stories', Exchange('stories'), routing_key='stories'),
+        Queue('llm', Exchange('llm'), routing_key='llm'),
     ]
     
     # Monitoring

@@ -124,6 +124,39 @@ class TaskService:
         )
         return task.id
     
+    # LLM-related task helpers
+    def generate_story_async(self, **kwargs) -> str:
+        """Submit story generation task"""
+        task = self.celery_app.send_task(
+            'llm.generate_story',
+            kwargs=kwargs
+        )
+        return task.id
+    
+    def analyze_story_async(self, **kwargs) -> str:
+        """Submit story analysis task"""
+        task = self.celery_app.send_task(
+            'llm.analyze_story',
+            kwargs=kwargs
+        )
+        return task.id
+    
+    def summarize_story_async(self, **kwargs) -> str:
+        """Submit story summarization task"""
+        task = self.celery_app.send_task(
+            'llm.summarize_story',
+            kwargs=kwargs
+        )
+        return task.id
+    
+    def improve_story_async(self, **kwargs) -> str:
+        """Submit story improvement task"""
+        task = self.celery_app.send_task(
+            'llm.improve_story',
+            kwargs=kwargs
+        )
+        return task.id
+
 
 # Global task service instance
 task_service = TaskService()
