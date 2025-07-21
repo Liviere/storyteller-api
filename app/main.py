@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 
 import sentry_sdk
 from dotenv import load_dotenv
@@ -22,11 +23,20 @@ if SENTRY_DSN:
     )
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    create_tables()
+    yield
+    # Shutdown - add cleanup logic here if needed
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Story Teller API",
         description="API for creating and managing stories",
         version="1.0.0",
+        lifespan=lifespan,
     )
 
     # Configure CORS
@@ -41,11 +51,6 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(stories_router, prefix="/api/v1", tags=["stories"])
     app.include_router(llm_router)
-
-    # Create database tables on startup
-    @app.on_event("startup")
-    async def startup_event():
-        create_tables()
 
     @app.get("/")
     async def root():
