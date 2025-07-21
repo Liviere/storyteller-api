@@ -459,7 +459,7 @@ class TestLLMServiceUsageStats:
             "app.llm.services.create_story_generation_chain"
         ) as mock_chain_creator:
             mock_chain = AsyncMock()
-            mock_chain.ainvoke.side_effect = Exception("Test error")
+            mock_chain.generate_story.side_effect = Exception("Test error")
             mock_chain_creator.return_value = mock_chain
 
             with pytest.raises(Exception):
