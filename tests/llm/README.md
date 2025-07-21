@@ -1,52 +1,178 @@
 # LLM Tests
 
-This directory contains comprehensive tests for Large Language Model (LLM) functionality in the Story Teller API.
+This directory contains comprehensive tests for Large Language Model (LLM) functionality in the Story Teller API, including both synchronous and asynchronous (Celery-based) operations.
 
-## Test Structure
+## 🏗️ Architecture Overview
+
+The LLM system supports:
+
+- **Synchronous Operations**: Direct API calls for health checks, model info, statistics
+- **Asynchronous Operations**: Celery-based task processing for story generation, analysis
+- **Multiple Providers**: OpenAI, DeepInfra, with extensible provider architecture
+- **Configuration Management**: YAML-based model configuration and task assignments
+
+## 📁 Test Structure
 
 ```
 tests/llm/
-├── __init__.py              # Package marker
-├── conftest_llm.py         # LLM-specific fixtures and configuration
-├── test_llm_config.py      # Tests for LLM configuration management
-├── test_llm_service.py     # Tests for LLM service implementation
-├── test_llm_api.py         # Tests for LLM API endpoints
-└── README.md              # This file
+├── __init__.py                    # Package marker
+├── conftest_llm.py               # LLM-specific fixtures and configuration
+├── test_unit.py                  # Unit tests with mocked LLM services (25 tests)
+├── test_integration.py           # Real LLM API integration tests (7 tests)
+├── test_llm_api.py              # Sync API endpoints testing (~10 tests)
+├── test_llm_api_async.py        # 🆕 Async API endpoints with TaskResponse (~15 tests)
+├── test_integration_celery.py   # 🆕 Real LLM + Celery integration (~8 tests)
+└── README.md                    # This documentation
 ```
 
-## Test Categories
+## 🧪 Test Categories
 
-### 1. Mock Tests (Fast) - `@pytest.mark.llm_mock`
+### 1. Unit Tests (`test_unit.py`) - Fast Development
 
-These tests use mock services and don't make real API calls to LLM providers:
+**Purpose**: Test LLM service logic with mocked dependencies
 
-- **API endpoint validation**: Request/response format, parameter validation
-- **Error handling**: Invalid inputs, timeout scenarios, service failures
+- **Configuration validation**: YAML parsing, model resolution, task assignments
 - **Service layer logic**: Method signatures, return values, exception handling
-- **Configuration loading**: YAML parsing, model resolution, task assignments
+- **Error handling**: Invalid inputs, timeout scenarios, service failures
+- **Provider abstraction**: Testing provider interface implementations
 
-**Advantages:**
+**Mocking Strategy**:
 
-- ⚡ Fast execution (< 1 second per test)
-- 🔄 Always runnable (no API keys required)
-- 🎯 Isolated testing of our code logic
-- 💰 No API costs
+```python
+@patch('app.llm.services.LLMService._make_request')
+def test_story_generation(mock_request):
+    mock_request.return_value = {"story": "Generated story content"}
 
-### 2. Integration Tests (Slow) - `@pytest.mark.llm_integration`
+    result = llm_service.generate_story("Test prompt")
+    assert "Generated story content" in result["story"]
+```
 
-These tests make real calls to configured LLM models from the `testing` configuration:
+**Execution Time**: ~0.6 seconds | **API Costs**: None | **Dependencies**: None
 
-- **Real model behavior**: Actual story generation, analysis, summarization
-- **Model comparison**: Testing multiple models for quality differences
-- **Performance validation**: Response times, token usage
-- **End-to-end workflows**: Complete request → LLM → response cycles
+### 2. Sync API Tests (`test_llm_api.py`) - Endpoint Validation
 
-**Advantages:**
+**Purpose**: Test synchronous LLM endpoints with mocked services
 
-- 🔍 Real-world validation
-- 📊 Quality assessment of generated content
-- ⚙️ Provider integration testing
-- 🚀 Production readiness verification
+**Endpoints Tested**:
+
+- `GET /api/v1/llm/health` - Service health status
+- `GET /api/v1/llm/models` - Available model information
+- `GET /api/v1/llm/stats` - Usage statistics
+
+**Test Patterns**:
+
+```python
+async def test_health_endpoint(async_client, mock_llm_service):
+    mock_llm_service.get_health.return_value = {"status": "healthy"}
+
+    response = await async_client.get("/api/v1/llm/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"
+```
+
+**Execution Time**: ~1-2 seconds | **API Costs**: None | **Dependencies**: Mocked LLM
+
+### 3. Async API Tests (`test_llm_api_async.py`) - 🆕 TaskResponse Endpoints
+
+**Purpose**: Test asynchronous LLM operations returning TaskResponse objects
+
+**Endpoints Tested**:
+
+- `POST /api/v1/llm/stories/generate` - Async story generation
+- `POST /api/v1/llm/stories/analyze` - Async story analysis
+- `POST /api/v1/llm/stories/summarize` - Async story summarization
+
+**Test Patterns**:
+
+```python
+async def test_async_story_generation(async_client, mock_task_service):
+    mock_task_service.process_task.return_value = TaskResponse(
+        task_id="llm_test_123",
+        status=TaskStatus.PENDING,
+        result=None
+    )
+
+    response = await async_client.post("/api/v1/llm/stories/generate", json={
+        "prompt": "Test story prompt",
+        "model": "gpt-3.5-turbo"
+    })
+
+    assert response.status_code == 202
+    assert response.json()["task_id"] == "llm_test_123"
+    assert response.json()["status"] == "PENDING"
+```
+
+**Execution Time**: ~1-2 seconds | **API Costs**: None | **Dependencies**: Mocked TaskService
+
+### 4. Integration Tests (`test_integration.py`) - Real LLM APIs
+
+**Purpose**: Validate real LLM provider integration (requires API keys)
+
+**Test Marker**: `@pytest.mark.llm_integration`
+
+**Test Coverage**:
+
+- Real model responses and quality validation
+- Provider-specific behavior testing
+- Error handling with real API failures
+- Performance and token usage validation
+
+**Infrastructure Requirements**:
+
+```bash
+# Required environment variables
+export OPENAI_API_KEY="your-openai-key"
+export DEEPINFRA_API_KEY="your-deepinfra-key"
+
+# Uses testing configuration from llm_config.yaml
+```
+
+**Execution Time**: ~2-5 minutes | **API Costs**: Low ($0.01-0.10) | **Dependencies**: Real LLM APIs
+
+### 5. Celery Integration Tests (`test_integration_celery.py`) - 🆕 End-to-End Async
+
+**Purpose**: Test complete async workflows with real Celery workers and LLM APIs
+
+**Test Marker**: `@pytest.mark.celery_integration`
+
+**Infrastructure Requirements**:
+
+```bash
+# Start Celery infrastructure
+./celery-setup.sh start    # Redis broker
+./celery-setup.sh worker   # Celery worker
+
+# Requires LLM API keys for real processing
+export OPENAI_API_KEY="your-openai-key"
+```
+
+**Test Scenarios**:
+
+```python
+@pytest.mark.celery_integration
+async def test_real_async_story_generation():
+    # Create real task processed by Celery worker with real LLM
+    response = await async_client.post("/api/v1/llm/stories/generate", json={
+        "prompt": "A short story about async testing",
+        "model": "gpt-3.5-turbo"
+    })
+
+    task_id = response.json()["task_id"]
+
+    # Poll for real task completion
+    for _ in range(60):  # Max 60 seconds for LLM response
+        status = await async_client.get(f"/api/v1/tasks/{task_id}")
+        if status.json()["status"] in ["SUCCESS", "FAILURE"]:
+            break
+        await asyncio.sleep(1)
+
+    # Verify real LLM-generated story
+    final_result = await async_client.get(f"/api/v1/tasks/{task_id}")
+    assert final_result.json()["status"] == "SUCCESS"
+    assert len(final_result.json()["result"]["story"]) > 50
+```
+
+**Execution Time**: ~3-8 minutes | **API Costs**: Moderate ($0.05-0.30) | **Dependencies**: Celery + Real LLM APIs
 
 ## Configuration-Driven Testing
 
@@ -84,53 +210,81 @@ settings:
     skip_slow_models: true # Skip expensive models in tests
 ```
 
-## Running Tests
+## 🚀 Running LLM Tests
 
-### Run All LLM Tests
+### Fast Development (Mocked Dependencies)
 
 ```bash
-# All LLM tests (mock + integration if configured)
+# Unit tests only (25 tests, ~0.6 seconds)
+poetry run pytest tests/llm/test_unit.py -v
+
+# Sync API tests (~10 tests, ~1-2 seconds)
+poetry run pytest tests/llm/test_llm_api.py -v
+
+# Async API tests (~15 tests, ~1-2 seconds)
+poetry run pytest tests/llm/test_llm_api_async.py -v
+
+# All fast tests (~50 tests, ~3-5 seconds)
+poetry run pytest tests/llm/ -m "not llm_integration and not celery_integration" -v
+```
+
+### Integration Testing (Real LLM APIs)
+
+```bash
+# Requires API keys
+export OPENAI_API_KEY="your-openai-key"
+export DEEPINFRA_API_KEY="your-deepinfra-key"
+
+# Real LLM integration tests (~7 tests, ~2-5 minutes)
+poetry run pytest tests/llm/test_integration.py -v -m llm_integration
+```
+
+### Celery Integration Testing (Real Infrastructure + LLM)
+
+```bash
+# Start Celery infrastructure
+./celery-setup.sh start
+./celery-setup.sh worker
+
+# Set API keys
+export OPENAI_API_KEY="your-openai-key"
+
+# Real async processing tests (~8 tests, ~3-8 minutes)
+poetry run pytest tests/llm/test_integration_celery.py -v -m celery_integration
+
+# All LLM tests including full integration (~65 tests, ~8-15 minutes)
 poetry run pytest tests/llm/ -v
-
-# Using VS Code task
-# Ctrl+Shift+P → "Tasks: Run Task" → "Poetry: Run Tests"
 ```
 
-### Run Only Mock Tests (Fast)
+### Selective Testing Strategies
 
 ```bash
-# Only fast mock tests
-poetry run pytest tests/llm/ -m llm_mock -v
+# Skip expensive tests (recommended for development)
+poetry run pytest tests/llm/ -m "not llm_integration and not celery_integration" -v
 
-# Exclude integration tests
-poetry run pytest tests/llm/ -m "not llm_integration" -v
+# Only integration tests (for pre-deployment validation)
+poetry run pytest tests/llm/ -m "llm_integration or celery_integration" -v
+
+# Test specific async functionality
+poetry run pytest tests/llm/test_llm_api_async.py tests/llm/test_integration_celery.py -v
 ```
 
-### Run Only Integration Tests (Slow)
+## 📊 Test Metrics Summary
 
-```bash
-# Only real LLM integration tests
-poetry run pytest tests/llm/ -m llm_integration -v
+| Test Category      | File                         | Tests   | Time    | Cost       | Dependencies       |
+| ------------------ | ---------------------------- | ------- | ------- | ---------- | ------------------ |
+| Unit Tests         | `test_unit.py`               | 25      | ~0.6s   | $0         | None               |
+| Sync API           | `test_llm_api.py`            | ~10     | ~1-2s   | $0         | Mocked LLM         |
+| Async API          | `test_llm_api_async.py`      | ~15     | ~1-2s   | $0         | Mocked TaskService |
+| Integration        | `test_integration.py`        | ~7      | ~5m     | ~$0.10     | Real LLM APIs      |
+| Celery Integration | `test_integration_celery.py` | ~8      | ~8m     | ~$0.30     | Celery + LLM APIs  |
+| **Total**          | **All Files**                | **~65** | **~5s** | **~$0.40** | **Mixed**          |
 
-# Skip if no API keys
-SKIP_LLM_INTEGRATION_TESTS=true poetry run pytest tests/llm/ -v
-```
+_Cost estimates based on OpenAI gpt-3.5-turbo pricing for testing prompts_
 
-### Run Specific Test Categories
+## 🔧 Configuration-Driven Testing
 
-```bash
-# Test specific endpoints
-poetry run pytest tests/llm/test_llm_api.py::TestLLMGenerateEndpoint -v
-poetry run pytest tests/llm/test_llm_api.py::TestLLMAnalyzeEndpoint -v
-
-# Test configuration
-poetry run pytest tests/llm/test_llm_config.py -v
-
-# Test service layer
-poetry run pytest tests/llm/test_llm_service.py -v
-```
-
-## Environment Setup
+Tests automatically adapt to your `llm_config.yaml` configuration:
 
 ### For Mock Tests Only
 

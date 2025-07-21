@@ -1,52 +1,285 @@
 # End-to-End Tests
 
-This directory contains end-to-end (E2E) tests and performance tests for the Story Teller API.
+This directory contains end-to-end (E2E) tests and performance tests for the Story Teller API, covering both legacy synchronous workflows and modern asynchronous (Celery-based) patterns.
 
-## Structure
+## 🏗️ Architecture Overview
+
+E2E tests validate complete user journeys across:
+
+- **Story Management**: Full CRUD lifecycle with state transitions
+- **LLM Integration**: AI-powered story generation, analysis, and improvement
+- **Task Processing**: Asynchronous workflows with Celery workers
+- **Performance**: Load testing and scalability validation under realistic conditions
+
+## 📁 Test Structure
 
 ```
 tests/e2e/
-├── __init__.py              # Package initialization
-├── README.md               # This file
-├── test_workflows.py       # Complete workflow tests
-├── locustfile.py          # Performance/load testing with Locust
-└── config.py              # Performance test configuration
+├── __init__.py                    # Package initialization
+├── test_workflows_async.py        # 🆕 Modern async workflow tests (~8 tests)
+├── locustfile.py                 # Performance/load testing with Locust
+├── config.py                     # Performance test configuration and scenarios
+└── README.md                     # This documentation
 ```
 
-## Test Categories
+## 🧪 Test Categories
 
-### Workflow Tests (`test_workflows.py`)
+### 1. Modern Async Workflow Tests (`test_workflows_async.py`) - 🆕 Current Approach
 
-Complete user journey tests that validate end-to-end functionality:
+**Purpose**: Validate complete async user journeys with task processing
 
-- **Story Lifecycle Tests**: Full CRUD operations with state transitions
-- **Multi-Story Workflows**: Complex scenarios with multiple stories
-- **LLM Integration Workflows**: Combined story management and AI operations
-- **Error Handling Workflows**: Cross-component error scenarios
+**Key Workflow Scenarios**:
 
-### Performance Tests (`locustfile.py`)
+```python
+async def test_complete_story_generation_workflow():
+    """Test full async story generation from prompt to published story"""
 
-Load and performance testing using Locust framework:
+    # 1. Create async story generation task
+    response = await async_client.post("/api/v1/stories/generate", json={
+        "prompt": "A story about microservices architecture",
+        "genre": "Technology",
+        "target_length": "medium"
+    })
 
-- **Load Testing**: Simulated user load with realistic usage patterns
-- **Stress Testing**: High-load scenarios to identify breaking points
-- **Endurance Testing**: Long-running tests for stability validation
-- **Spike Testing**: Sudden load increases to test elasticity
+    task_id = response.json()["task_id"]
 
-## Running Tests
+    # 2. Poll for task completion (real async processing)
+    story_data = await poll_task_completion(task_id, timeout=120)
 
-### Workflow Tests
+    # 3. Verify story was created and saved
+    story_id = story_data["story_id"]
+    story_response = await async_client.get(f"/api/v1/stories/{story_id}")
+
+    assert story_response.status_code == 200
+    assert len(story_response.json()["story_text"]) > 100
+
+    # 4. Generate analysis task for the story
+    analysis_response = await async_client.post(f"/api/v1/stories/{story_id}/analyze")
+    analysis_task_id = analysis_response.json()["task_id"]
+
+    # 5. Wait for analysis completion
+    analysis_data = await poll_task_completion(analysis_task_id, timeout=60)
+
+    # 6. Verify analysis results
+    assert "themes" in analysis_data
+    assert "sentiment" in analysis_data
+    assert analysis_data["word_count"] > 0
+
+    # 7. Publish the story
+    publish_response = await async_client.put(f"/api/v1/stories/{story_id}", json={
+        "is_published": True
+    })
+
+    assert publish_response.status_code == 200
+    assert publish_response.json()["is_published"] is True
+```
+
+**Test Classes**:
+
+- `TestAsyncStoryGeneration`: End-to-end story creation workflows
+- `TestAsyncStoryAnalysis`: Complete analysis and improvement pipelines
+- `TestMultiStepWorkflows`: Complex workflows combining multiple async operations
+- `TestAsyncErrorHandling`: Failure scenarios in async context
+
+**Infrastructure Requirements**:
 
 ```bash
-# Run all workflow tests
-poetry run pytest tests/e2e/test_workflows.py
+# Required for real async processing
+./celery-setup.sh start    # Redis broker
+./celery-setup.sh worker   # Celery worker
 
-# Run only story workflow tests
-poetry run pytest tests/e2e/test_workflows.py::TestStoryWorkflows
-
-# Run only LLM workflow tests (requires LLM configuration)
-poetry run pytest tests/e2e/test_workflows.py::TestLLMWorkflows -m llm_integration
+# LLM API keys for real story operations
+export OPENAI_API_KEY="your-openai-key"
 ```
+
+**Test Markers**: `@pytest.mark.celery_integration`
+
+**Execution Time**: ~1.3 seconds (mocked) / ~5-12 minutes (real Celery) | **Dependencies**: Mocked TaskService / Celery + Redis + LLM APIs
+
+### 2. Performance Tests (`locustfile.py`) - Load & Scalability
+
+**Purpose**: Validate system performance under realistic load conditions
+
+**Test Scenarios**:
+
+- **Light Load**: 10 users, 2 spawn rate, 2 minutes
+- **Medium Load**: 50 users, 5 spawn rate, 5 minutes
+- **Heavy Load**: 200 users, 10 spawn rate, 10 minutes
+- **Stress Test**: 500 users, 20 spawn rate, 5 minutes
+- **Spike Test**: 100 users, 50 spawn rate, 3 minutes
+- **Endurance Test**: 30 users, 3 spawn rate, 30 minutes
+
+**Load Test Operations**:
+
+```python
+class StoryTellerUser(HttpUser):
+    wait_time = between(1, 3)
+
+    def on_start(self):
+        """Setup user session"""
+        pass
+
+    @task(3)
+    def create_story(self):
+        """Test story creation (high frequency)"""
+        self.client.post("/api/v1/stories/", json={
+            "title": f"Load Test Story {self.user_id}",
+            "content": "Generated during load testing",
+            "genre": "Testing"
+        })
+
+    @task(2)
+    def list_stories(self):
+        """Test story listing (medium frequency)"""
+        self.client.get("/api/v1/stories/")
+
+    @task(1)
+    def generate_async_story(self):
+        """Test async story generation (lower frequency, higher impact)"""
+        response = self.client.post("/api/v1/stories/generate", json={
+            "prompt": "A load testing story",
+            "genre": "Performance"
+        })
+
+        if response.status_code == 202:
+            task_id = response.json()["task_id"]
+            # Poll for completion in background
+            self.poll_task_status(task_id)
+```
+
+**Execution**: Via VS Code tasks or command line
+
+```bash
+# Web interface for interactive testing
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080
+
+# Automated load tests
+```
+
+## 🚀 Running E2E Tests
+
+### Fast Development (Legacy Compatibility)
+
+```bash
+# Legacy workflow tests (~31 tests, ~2-4 minutes)
+poetry run pytest tests/e2e/test_workflows.py.deprecated -v
+
+# Skip LLM integration in legacy tests
+poetry run pytest tests/e2e/test_workflows.py.deprecated -m "not llm_integration" -v
+```
+
+### Modern Async Workflows (Real Infrastructure)
+
+```bash
+# Start required infrastructure
+./celery-setup.sh start
+./celery-setup.sh worker
+
+# Set LLM API keys
+export OPENAI_API_KEY="your-openai-key"
+
+# Modern async workflow tests (8 tests, ~1.3 seconds - mocked)
+poetry run pytest tests/e2e/test_workflows_async.py -v
+
+# Real Celery integration tests (requires infrastructure)
+poetry run pytest tests/e2e/test_workflows_async.py -v -m celery_integration
+
+# All E2E tests including legacy (~39 tests, ~7-16 minutes with Celery)
+poetry run pytest tests/e2e/ -v
+```
+
+### Performance Testing
+
+```bash
+# Start application server
+poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8080
+
+# Interactive load testing (web interface)
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080
+
+# Automated load tests (headless)
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 --headless --users 50 --spawn-rate 5 --run-time 5m --html reports/performance/load_test.html
+
+# Use VS Code tasks for common scenarios
+# Ctrl+Shift+P → "Tasks: Run Task" → "Locust: Light Load Test"
+```
+
+### Selective Testing Strategies
+
+```bash
+# Skip expensive integration tests (development)
+poetry run pytest tests/e2e/ -m "not celery_integration and not llm_integration" -v
+
+# Only modern async patterns (recommended)
+poetry run pytest tests/e2e/test_workflows_async.py -v
+
+# Specific workflow categories
+poetry run pytest tests/e2e/test_workflows_async.py::TestAsyncStoryGeneration -v
+poetry run pytest tests/e2e/test_workflows_async.py::TestMultiStepWorkflows -v
+```
+
+## 📊 Test Metrics Summary
+
+| Test Category     | File                           | Tests   | Time      | Cost        | Dependencies       |
+| ----------------- | ------------------------------ | ------- | --------- | ----------- | ------------------ |
+| Legacy Workflows  | `test_workflows.py.deprecated` | 31      | ~4m       | ~$0.15      | LLM APIs (direct)  |
+| Async Workflows   | `test_workflows_async.py`      | 8       | ~1.3s     | $0 (mocked) | Mocked TaskService |
+| Async + Celery    | `test_workflows_async.py`      | 8       | ~12m      | ~$0.40      | Celery + LLM APIs  |
+| Performance Tests | `locustfile.py`                | Manual  | Variable  | $0          | Running server     |
+| **Fast Total**    | **Mocked Only**                | **8**   | **~1.3s** | **$0**      | **Mocked**         |
+| **Full Total**    | **All Files**                  | **~39** | **~16m**  | **~$0.55**  | **Mixed**          |
+
+_Cost estimates based on OpenAI gpt-3.5-turbo pricing for workflow tests_
+
+## 🔧 Development Workflow
+
+### Adding New E2E Scenarios
+
+1. **Identify User Journey**: Define complete workflow from start to finish
+2. **Write Async Test**: Add to `test_workflows_async.py` with real task processing
+3. **Add Performance Test**: Include scenario in `locustfile.py` if relevant
+4. **Validate End-to-End**: Test with real infrastructure and LLM integration
+
+### Debugging E2E Failures
+
+```bash
+# Run single workflow with detailed output
+poetry run pytest tests/e2e/test_workflows_async.py::test_specific_workflow -v -s
+
+# Check Celery worker status during failures
+./celery-setup.sh status
+./celery-setup.sh logs
+
+# Monitor task processing
+./celery-setup.sh flower  # Web interface at http://localhost:5555
+```
+
+### Performance Analysis
+
+```bash
+# Generate performance reports
+poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 --headless --users 100 --spawn-rate 10 --run-time 5m --html reports/performance/analysis.html
+
+# View detailed performance metrics
+open reports/performance/analysis.html
+```
+
+## 🎯 E2E Test Philosophy
+
+E2E tests validate **complete user value delivery**:
+
+1. **Real Infrastructure**: Use actual Celery workers, Redis, LLM APIs
+2. **End-to-End Flows**: Test complete workflows, not just API endpoints
+3. **Production-Like**: Mirror real-world usage patterns and data volumes
+4. **User-Centric**: Focus on user goals, not technical implementation details
+
+**When to Write E2E Tests**:
+
+- ✅ New user workflows spanning multiple components
+- ✅ Critical business processes (story generation, publishing)
+- ✅ Integration points between major system components
+- ❌ Simple CRUD operations (covered by integration tests)
+- ❌ Unit-level business logic (covered by unit tests)
 
 ### Performance Tests
 

@@ -4,28 +4,54 @@ REST API for managing stories built with FastAPI and Poetry.
 
 ## Features
 
+### Core Story Management
+
 - Create, read, update, and delete stories
 - Filter stories by genre, author, and publication status
 - Publish/unpublish stories
+
+### 🤖 AI-Powered Features
+
 - **AI-powered story generation with LLM integration**
 - **Story analysis (sentiment, genre classification, comprehensive analysis)**
 - **Story summarization with customizable length and focus**
 - **Story improvement (grammar, style, general quality enhancement)**
 - **Support for multiple LLM providers (OpenAI, DeepInfra, Any OpenAI-compatible API)**
 - **LLM usage statistics and health monitoring**
+
+### ⚡ Asynchronous Processing
+
 - **Asynchronous task processing with Celery and Redis**
 - **Background task management for time-consuming operations**
 - **Task status monitoring and result retrieval**
+- **Non-blocking API responses with task-based workflows**
+- **Real-time task progress tracking**
+
+### 💾 Database & Infrastructure
+
 - **MySQL database with SQLAlchemy ORM (with Docker support)**
 - **SQLite fallback for development**
+- **Redis message broker for distributed task processing**
+- **Database transaction isolation and consistency**
+
+### 🔧 Development & Operations
+
 - **Error monitoring and tracking with Sentry**
+- **Docker and docker-compose for easy deployment**
+- **Isolated test environment with dedicated MySQL instance**
+- **Performance testing with Locust**
 - Automatic API documentation with Swagger UI
 - CORS support for frontend integration
 - Modern dependency management with Poetry
 - Development tools: Black, isort, flake8, mypy, pytest
-- **Docker and docker-compose for easy deployment**
-- **Isolated test environment with dedicated MySQL instance**
-- **Performance testing with Locust**
+
+### 🧪 Testing & Quality Assurance
+
+- **Comprehensive async testing with Celery integration**
+- **Two-tier testing strategy (unit mocks + integration tests)**
+- **Real worker testing with Redis and Celery infrastructure**
+- **Production-grade end-to-end testing**
+- **VS Code task automation for development workflows**
 
 ## Quick Start
 
@@ -245,69 +271,322 @@ poetry run pytest
 
 ## Testing
 
-The project includes comprehensive unit, integration, and end-to-end tests with organized structure and high code coverage.
+The project features a **modern, production-grade testing architecture** designed around **asynchronous task processing with Celery**. After Celery integration, the testing strategy has been completely modernized to handle async workflows, real infrastructure integration, and comprehensive end-to-end validation.
 
-### Test Structure
+### 🏗️ Two-Tier Testing Architecture
+
+#### **Tier 1: Unit/Mock Tests** (Fast Development)
+
+- **Purpose**: Rapid feedback during development
+- **Speed**: ~6 seconds for full fast suite (measured)
+- **Method**: Mock Celery tasks and external services
+- **Usage**: Continuous development, CI/CD pipelines
+
+#### **Tier 2: Integration Tests** (Production Validation)
+
+- **Purpose**: End-to-end validation with real infrastructure
+- **Speed**: 2-3 minutes (includes real LLM API calls)
+- **Method**: Real Redis + Celery workers + database
+- **Usage**: Pre-deployment validation, regression testing
+
+### 📁 Modern Test Structure
 
 ```
 tests/
-├── conftest.py          # Main test configuration and fixtures
-├── shared/              # Shared component tests (models, schemas, main app)
-│   ├── test_models.py   # SQLAlchemy model tests
-│   ├── test_schemas.py  # Pydantic schema tests
-│   └── test_main.py     # Main application tests
-├── stories/             # Stories router tests
-│   ├── test_unit.py     # Unit tests for story validation and business logic
-│   ├── test_integration.py # API endpoint integration tests
-│   └── conftest.py      # Stories-specific fixtures
-├── llm/                 # LLM functionality tests
-│   ├── test_unit.py     # Unit tests with mocked LLM services
-│   ├── test_integration.py # Real LLM API integration tests
-│   ├── test_llm_api.py  # LLM API endpoint tests (mocked)
-│   └── conftest.py      # LLM-specific fixtures and configuration
-├── e2e/                 # End-to-end workflows and performance tests
-│   ├── test_workflows.py # Complete user journey tests
-│   ├── locustfile.py    # Performance testing scenarios
-│   ├── config.py        # Performance test configuration
-│   └── conftest.py      # E2E test fixtures
-└── README.md           # Detailed test documentation
+├── conftest.py                      # Core test configuration and fixtures
+├── CELERY_TESTING_GUIDE.md          # 📖 Comprehensive Celery testing guide
+├── CELERY_INTEGRATION_TESTS.md      # 📖 Integration testing documentation
+│
+├── shared/                          # 🧱 Foundation Components
+│   ├── test_models.py               # SQLAlchemy model validation
+│   ├── test_schemas.py              # Pydantic schema testing
+│   └── test_main.py                 # FastAPI application tests
+│
+├── tasks/ 🆕                        # ⚡ Celery Task Management
+│   ├── conftest.py                  # Celery fixtures and mock services
+│   ├── test_task_service.py         # TaskService unit tests (mocked)
+│   ├── test_tasks_api.py            # Task API endpoints (/api/v1/tasks/*)
+│   └── test_celery_integration.py   # Real Celery worker tests
+│
+├── stories/                         # 📚 Story Management
+│   ├── test_unit.py                 # Business logic validation
+│   ├── test_integration.py          # Legacy sync API tests
+│   ├── test_integration_async.py 🆕  # Async API tests (mocked tasks)
+│   ├── test_integration_celery.py 🆕 # Real Celery integration tests
+│   └── conftest.py                  # Story-specific fixtures
+│
+├── llm/ 🔄                          # 🤖 AI/LLM Functionality (Modernized)
+│   ├── test_unit.py                 # LLM service unit tests
+│   ├── test_integration.py          # Direct LLM API integration
+│   ├── test_llm_api.py              # Sync endpoints (health, models, stats)
+│   ├── test_llm_api_async.py 🆕      # Async endpoints returning TaskResponse
+│   ├── test_integration_celery.py 🆕 # Real LLM + Celery integration
+│   └── conftest.py                  # LLM fixtures and configurations
+│
+└── e2e/                             # 🌐 End-to-End Workflows
+    ├── test_workflows.py.deprecated # Legacy sync workflow tests
+    ├── test_workflows_async.py 🆕    # Modern async workflow tests
+    ├── locustfile.py                # Performance testing scenarios
+    └── conftest.py                  # E2E test fixtures
 ```
 
-### Running Tests
+### 🚀 Running Tests
+
+#### **Quick Development Tests**
 
 ```bash
-# Run all tests (107 total)
-poetry run pytest
+# Fast tests only (excludes slow integration)
+poetry run pytest -m "not slow and not llm_integration and not celery_integration" -v
 
-# Run with coverage report
-poetry run pytest --cov=. --cov-report=html
-open reports/coverage/index.html
-
-# Run specific test categories
-poetry run pytest tests/shared/     # Core component tests (16 tests)
-poetry run pytest tests/stories/   # Stories functionality (34 tests)
-poetry run pytest tests/llm/       # LLM functionality (51 tests)
-poetry run pytest tests/e2e/       # End-to-end workflows (6 tests)
-
-# Run specific test files
-poetry run pytest tests/stories/test_integration.py -v
-poetry run pytest tests/llm/test_unit.py -v
-
-# Run with different markers
-poetry run pytest -m "not llm_integration"  # Skip LLM integration tests
-poetry run pytest -m "slow"                 # Run only slow tests
+# Unit tests with mocks (~6 seconds)
+poetry run pytest tests/shared/ tests/tasks/test_task_service.py tests/stories/test_unit.py -v
 ```
 
-### Test Features
+#### **Async API Tests**
 
-- **Router-based organization**: Tests organized by application routers (stories, llm)
-- **Shared components**: Reusable tests for models, schemas, and main app
-- **Comprehensive coverage**: Unit tests, integration tests, and complete workflows
-- **LLM testing**: Both mocked unit tests and real API integration tests
-- **Performance testing**: Load testing with Locust for various scenarios
-- **Isolated testing**: Each test uses temporary SQLite database or dedicated MySQL test instance
-- **Fixtures and mocking**: Extensive use of pytest fixtures and mocking for reliable tests
-- **Fast execution**: Unit tests run quickly, integration tests can be skipped if needed
+```bash
+# Test async TaskResponse endpoints
+poetry run pytest tests/llm/test_llm_api_async.py tests/stories/test_integration_async.py -v
+
+# Test TaskService and Task API
+poetry run pytest tests/tasks/test_task_service.py tests/tasks/test_tasks_api.py -v
+```
+
+#### **Celery Integration Tests** (Requires Infrastructure)
+
+```bash
+# 1. Start infrastructure
+./celery-setup.sh start    # Redis
+./celery-setup.sh worker   # Celery worker
+
+# 2. Run real integration tests
+poetry run pytest -m celery_integration -v
+
+# 3. Specific integration suites
+poetry run pytest tests/stories/test_integration_celery.py -v    # Stories + Celery
+poetry run pytest tests/llm/test_integration_celery.py -v       # LLM + Celery
+poetry run pytest tests/tasks/test_celery_integration.py -v     # Task management
+```
+
+#### **Coverage and Comprehensive Testing**
+
+```bash
+# Full test suite
+poetry run pytest
+
+# With coverage report
+poetry run pytest --cov=. --cov-report=html:reports/coverage
+open reports/coverage/index.html
+
+# All tests without Celery integration
+poetry run pytest -m "not celery_integration" -v
+```
+
+### 🏷️ Test Markers and Categories
+
+#### **Primary Markers**
+
+- `celery_integration`: Requires Redis + Celery worker infrastructure
+- `celery_mock`: Uses mocked Celery components (fast)
+- `llm_integration`: Requires real LLM API keys
+- `slow`: Long-running tests (> 30 seconds)
+- `e2e`: Complete workflow validation
+
+#### **Test Categories by Speed**
+
+```bash
+# ⚡ Lightning Fast (< 5s) - Daily development
+poetry run pytest tests/shared/ tests/tasks/test_task_service.py -v
+
+# 🏃 Fast (< 30s) - Pre-commit validation
+poetry run pytest -m "not slow and not celery_integration" -v
+
+# 🐢 Slow (30-90s) - Pre-deployment validation
+poetry run pytest -m celery_integration -v
+```
+
+### 🔧 VS Code Integration
+
+#### **Essential Development Tasks**
+
+- `Poetry: Run Fast Tests Only` - Daily development workflow
+- `Poetry: Run Task Service Tests` - TaskService validation
+- `Poetry: Run Async LLM API Tests` - Async endpoint testing
+
+#### **Integration Testing Tasks**
+
+- `Poetry: Run All Celery Integration Tests` - Full infrastructure testing
+- `Poetry: Run Stories Celery Integration Tests` - Story workflow validation
+- `Poetry: Run LLM Celery Integration Tests` - AI feature validation
+
+#### **Specialized Testing Tasks**
+
+- `Poetry: Run Tests Without Celery Integration` - Fast CI/CD pipeline
+- `Poetry: Run All New Async Tests` - Modern async test suite
+
+_Access via: `Ctrl+Shift+P` → "Tasks: Run Task"_
+
+### 🔄 API Testing Strategy After Celery Integration
+
+#### **Before Celery** (Legacy):
+
+```python
+# Synchronous API expectation - immediate result
+response = client.post("/api/v1/llm/generate", json={
+    "prompt": "A brave knight's adventure",
+    "genre": "fantasy",
+    "length": "short"
+})
+assert response.status_code == 200
+data = response.json()
+assert "story" in data  # Direct story content
+assert len(data["story"]) > 100
+assert "metadata" in data
+```
+
+#### **After Celery** (Modern E2E Testing):
+
+```python
+# Step 1: Submit async task
+response = client.post("/api/v1/llm/generate", json={
+    "prompt": "A brave knight's adventure",
+    "genre": "fantasy",
+    "length": "short"
+})
+assert response.status_code == 200
+task_data = response.json()
+assert "task_id" in task_data
+assert task_data["status"] == "PENDING"
+task_id = task_data["task_id"]
+
+# Step 2: Poll for task completion (integration tests)
+import time
+max_wait = 60  # seconds
+start_time = time.time()
+
+while time.time() - start_time < max_wait:
+    task_response = client.get(f"/api/v1/tasks/{task_id}")
+    assert task_response.status_code == 200
+    task_status = task_response.json()
+
+    if task_status["status"] == "SUCCESS":
+        # Step 3: Verify the actual generated story
+        result = task_status["result"]
+        assert "story" in result
+        assert len(result["story"]) > 100  # Generated content exists
+        assert "knight" in result["story"].lower()  # Prompt reflected
+        assert "metadata" in result
+        assert result["metadata"]["word_count"] > 0
+        break
+    elif task_status["status"] == "FAILURE":
+        pytest.fail(f"Task failed: {task_status.get('error', 'Unknown error')}")
+
+    time.sleep(2)  # Wait before next poll
+else:
+    pytest.fail(f"Task {task_id} did not complete within {max_wait} seconds")
+```
+
+### 🏭 Infrastructure Requirements
+
+#### **Unit/Mock Tests**: None
+
+- Uses temporary SQLite database
+- Mocks all external services
+- No Redis or Celery required
+
+#### **Integration Tests**: Full Infrastructure
+
+```bash
+# Required services
+./celery-setup.sh start    # Redis (port 6379)
+./celery-setup.sh worker   # Celery worker process
+# Optional: ./celery-setup.sh flower  # Monitoring UI (port 5555)
+
+# Database options
+# Option 1: SQLite (default, automatic)
+# Option 2: MySQL via Docker
+./docker-setup.sh start    # MySQL (port 3306)
+```
+
+### 📊 Test Performance Metrics
+
+| Test Category          | Count | Duration | Infrastructure |
+| ---------------------- | ----- | -------- | -------------- |
+| **Unit Tests**         | ~40   | < 5s     | None           |
+| **Mock Async Tests**   | ~25   | < 15s    | None           |
+| **Celery Integration** | ~15   | 30-90s   | Redis + Worker |
+| **LLM Integration**    | ~8    | 60-120s  | + LLM API      |
+| **Legacy Tests**       | ~30   | -        | (Deprecated)   |
+
+### 🎯 Testing Best Practices
+
+#### **Daily Development**
+
+1. Run fast tests continuously: `poetry run pytest -m "not slow" -v`
+2. Use VS Code tasks for common scenarios
+3. Focus on unit tests for rapid iteration
+
+#### **Pre-Commit Validation**
+
+1. Run all non-integration tests: `poetry run pytest -m "not celery_integration" -v`
+2. Verify code quality: `poetry run black . && poetry run isort . && poetry run flake8`
+3. Check type safety: `poetry run mypy .`
+
+#### **Pre-Deployment Validation**
+
+1. Start full infrastructure: Redis + Celery + MySQL
+2. Run complete integration suite: `poetry run pytest -v`
+3. Verify real LLM integration with API keys
+4. Run performance tests: Locust scenarios
+
+#### **Continuous Integration**
+
+- **Pipeline 1**: Fast tests (< 5 min) - on every commit
+- **Pipeline 2**: Integration tests (< 15 min) - on pull requests
+- **Pipeline 3**: Full validation (< 30 min) - on main branch
+
+### 🔍 Debugging Integration Tests
+
+#### **Common Issues and Solutions**
+
+**Redis Connection Errors:**
+
+```bash
+# Check Redis status
+redis-cli ping
+# Start if needed
+./celery-setup.sh start
+```
+
+**Celery Worker Not Processing:**
+
+```bash
+# Check worker status
+./celery-setup.sh status
+# Start worker
+./celery-setup.sh worker
+# Monitor tasks
+./celery-setup.sh flower  # Web UI at localhost:5555
+```
+
+**Database Transaction Issues:**
+
+```bash
+# Integration tests use real database
+# Ensure proper fixture usage: real_client, real_db
+# Check database synchronization between test and worker
+```
+
+**LLM API Failures:**
+
+```bash
+# Set API keys for integration tests
+export OPENAI_API_KEY="your-key"
+export DEEPINFRA_API_KEY="your-key"
+# Tests automatically skip if keys missing
+```
+
+This modern testing architecture ensures **production-grade reliability** while maintaining **developer productivity** through intelligent test categorization and infrastructure automation.
 
 ### LLM Testing
 

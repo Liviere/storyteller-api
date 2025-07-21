@@ -74,13 +74,13 @@ Tests for the main FastAPI application setup and core endpoints.
 ## Running Shared Tests
 
 ```bash
-# Run all shared component tests
+# Run all shared component tests (21 tests, ~1.4 seconds)
 poetry run pytest tests/shared/ -v
 
 # Run specific test file
-poetry run pytest tests/shared/test_models.py -v
-poetry run pytest tests/shared/test_schemas.py -v
-poetry run pytest tests/shared/test_main.py -v
+poetry run pytest tests/shared/test_models.py -v       # 6 tests, ~0.3s
+poetry run pytest tests/shared/test_schemas.py -v      # 10 tests, ~0.5s
+poetry run pytest tests/shared/test_main.py -v         # 5 tests, ~0.6s
 
 # Run with coverage for shared components only
 poetry run pytest tests/shared/ --cov=app.models --cov=app.schemas --cov=app.main

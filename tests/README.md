@@ -1,37 +1,77 @@
 # Tests for Story Teller API
 
-This directory contains comprehensive unit, integration, and end-to-end tests for the Story Teller API, organized by functionality and router structure.
+This directory contains comprehensive unit, integration, and end-to-end tests for the Story Teller API, modernized for **asynchronous task processing with Celery**. After Celery integration, the testing strategy has been completely rebuilt around async workflows and real infrastructure validation.
 
-## Test Structure
+## 🏗️ Modern Test Architecture
+
+### **Two-Tier Testing Strategy:**
+
+#### **Tier 1: Unit/Mock Tests** (Fast Development)
+
+- **Purpose**: Rapid feedback during development
+- **Speed**: ~6 seconds for full fast suite (measured)
+- **Method**: Mock Celery tasks and external services
+- **Usage**: Continuous development, CI/CD pipelines
+
+#### **Tier 2: Integration Tests** (Production Validation)
+
+- **Purpose**: End-to-end validation with real infrastructure
+- **Speed**: 2-3 minutes (includes real LLM API calls)
+- **Method**: Real Redis + Celery workers + database
+- **Usage**: Pre-deployment validation, regression testing
+
+## 📁 Test Structure
 
 ```
 tests/
-├── __init__.py              # Package marker
-├── conftest.py             # Main test configuration and fixtures
-├── README.md              # This file
-├── shared/                # Shared component tests (reusable across routers)
+├── __init__.py                      # Package marker
+├── conftest.py                      # Core test configuration and fixtures
+├── README.md                        # This file
+├── CELERY_TESTING_GUIDE.md          # 📖 Comprehensive Celery testing guide
+├── CELERY_INTEGRATION_TESTS.md      # 📖 Integration testing documentation
+│
+├── shared/                          # 🧱 Foundation Components
 │   ├── __init__.py
-│   ├── test_models.py     # SQLAlchemy model tests
-│   ├── test_schemas.py    # Pydantic schema tests
-│   └── test_main.py       # Main application tests
-├── stories/               # Stories router tests
+│   ├── test_models.py               # SQLAlchemy model tests (6 tests)
+│   ├── test_schemas.py              # Pydantic schema tests (10 tests)
+│   ├── test_main.py                 # FastAPI application tests (5 tests)
+│   └── README.md                    # Shared components documentation
+│
+├── tasks/ 🆕                        # ⚡ Celery Task Management
 │   ├── __init__.py
-│   ├── conftest.py        # Stories-specific fixtures
-│   ├── test_unit.py       # Unit tests (validation, business logic)
-│   └── test_integration.py # Integration tests (API endpoints)
-├── llm/                   # LLM functionality tests
+│   ├── conftest.py                  # Celery fixtures and mock services
+│   ├── test_task_service.py         # TaskService unit tests (mocked)
+│   ├── test_tasks_api.py            # Task API endpoints (/api/v1/tasks/*)
+│   ├── test_celery_integration.py   # Real Celery worker tests
+│   └── README.md                    # Task testing documentation
+│
+├── stories/                         # 📚 Story Management
 │   ├── __init__.py
-│   ├── conftest.py        # LLM-specific fixtures and configuration
-│   ├── test_unit.py       # Unit tests with mocked LLM services
-│   ├── test_integration.py # Real LLM API integration tests
-│   └── test_llm_api.py    # LLM API endpoint tests (mocked)
-└── e2e/                   # End-to-end workflows and performance tests
+│   ├── conftest.py                  # Stories-specific fixtures
+│   ├── test_unit.py                 # Business logic validation (16 tests)
+│   ├── test_integration.py          # Legacy sync API tests (18 tests)
+│   ├── test_integration_async.py 🆕  # Async API tests (mocked tasks)
+│   ├── test_integration_celery.py 🆕 # Real Celery integration tests
+│   └── README.md                    # Stories testing documentation
+│
+├── llm/ 🔄                          # 🤖 AI/LLM Functionality (Modernized)
+│   ├── __init__.py
+│   ├── conftest.py                  # LLM fixtures and configurations
+│   ├── test_unit.py                 # LLM service unit tests (25 tests)
+│   ├── test_integration.py          # Direct LLM API integration (7 tests)
+│   ├── test_llm_api.py              # Sync endpoints (health, models, stats)
+│   ├── test_llm_api_async.py 🆕      # Async endpoints returning TaskResponse
+│   ├── test_integration_celery.py 🆕 # Real LLM + Celery integration
+│   └── README.md                    # LLM testing documentation
+│
+└── e2e/                             # 🌐 End-to-End Workflows
     ├── __init__.py
-    ├── conftest.py        # E2E test fixtures
-    ├── test_workflows.py  # Complete user journey tests
-    ├── locustfile.py      # Performance testing scenarios
-    ├── config.py          # Performance test configuration
-    └── README.md          # E2E testing documentation
+    ├── conftest.py                  # E2E test fixtures
+    ├── test_workflows.py.deprecated # Legacy sync workflow tests
+    ├── test_workflows_async.py 🆕    # Modern async workflow tests
+    ├── locustfile.py                # Performance testing scenarios
+    ├── config.py                    # Performance test configuration
+    └── README.md                    # E2E testing documentation
 ```
 
 ## Test Categories
@@ -44,32 +84,126 @@ tests/
 - **test_schemas.py** (10 tests): Pydantic schema validation, serialization, and field constraints
 - **test_main.py** (5 tests): Main application endpoints, CORS, and documentation
 
+### 🆕 Task Management Tests (`tests/tasks/`)
+
+**Purpose**: Comprehensive testing of Celery task processing and TaskService
+
+- **test_task_service.py** (17 tests): TaskService unit tests with mocked Celery
+- **test_tasks_api.py** (13 tests): Task API endpoints (/api/v1/tasks/\*) testing
+- **test_celery_integration.py** (13 tests): Real Celery worker integration tests
+
 ### Stories Router Tests (`tests/stories/`)
 
 **Purpose**: Complete testing of story management functionality
 
 - **test_unit.py** (16 tests): Story validation, business logic, filtering, and helper functions
-- **test_integration.py** (18 tests): Full API endpoint testing including CRUD operations, filtering, publishing
+- **test_integration.py** (18 tests): Legacy sync API endpoint testing (deprecated)
+- **test_integration_async.py** 🆕 (~15 tests): Async API tests with mocked TaskService
+- **test_integration_celery.py** 🆕 (~10 tests): Real Celery integration for story operations
 
 ### LLM Functionality Tests (`tests/llm/`)
 
-**Purpose**: Comprehensive testing of AI/LLM integration
+**Purpose**: Comprehensive testing of AI/LLM integration (modernized for async)
 
 - **test_unit.py** (25 tests): Configuration validation, service initialization, mocked LLM operations
 - **test_integration.py** (7 tests): Real API calls to configured LLM providers (requires API keys)
-- **test_llm_api.py** (19 tests): FastAPI endpoint testing with mocked LLM services
+- **test_llm_api.py** (~10 tests): Sync endpoints (health, models, stats) with mocked services
+- **test_llm_api_async.py** 🆕 (~15 tests): Async endpoints returning TaskResponse
+- **test_integration_celery.py** 🆕 (~8 tests): Real LLM + Celery integration tests
 
 ### End-to-End Tests (`tests/e2e/`)
 
-**Purpose**: Complete user workflows and performance testing
+**Purpose**: Complete user workflows and performance testing (modernized for async)
 
-- **test_workflows.py** (6 tests): Full user journeys combining story management with LLM operations
+- **test_workflows.py.deprecated**: Legacy sync workflow tests (31 tests, deprecated)
+- **test_workflows_async.py** 🆕 (~8 tests): Modern async workflow tests with task polling
 - **locustfile.py**: Performance testing scenarios (light, medium, heavy load testing)
 - **config.py**: Performance test configuration and scenarios
 
-## Running Tests
+### Testing Strategies
 
-### Run All Tests (107 total)
+This repository employs a **two-tier testing strategy** optimized for development speed and CI/CD efficiency:
+
+#### 🚀 **Tier 1: Fast Tests** (Mocked Dependencies)
+
+- **Purpose**: Rapid development feedback (~6 seconds execution)
+- **Strategy**: Mock external services (TaskService, LLM APIs, Celery workers)
+- **Coverage**: Business logic, API schemas, database models, error handling
+- **Use Case**: Pre-commit validation, TDD development, CI/CD quick feedback
+
+**Key Mocking Patterns**:
+
+```python
+# TaskService mocking for async endpoints
+@patch('app.services.task_service.TaskService.process_task')
+def test_async_endpoint(mock_process):
+    mock_process.return_value = TaskResponse(
+        task_id="mock_123",
+        status=TaskStatus.PENDING,
+        result=None
+    )
+    # Test endpoint logic without Celery dependency
+```
+
+#### 🧪 **Tier 2: Integration Tests** (Real Infrastructure)
+
+- **Purpose**: End-to-end validation with real services (2-5 minutes execution)
+- **Strategy**: Real Celery workers, Redis broker, LLM providers, database transactions
+- **Coverage**: Task processing pipelines, async workflows, external API integration
+- **Use Case**: Pre-deployment validation, production readiness verification
+
+**Infrastructure Requirements**:
+
+```bash
+# Start complete integration environment
+./celery-setup.sh start    # Redis broker
+./celery-setup.sh worker   # Celery worker process
+# Tests can now use real TaskService functionality
+```
+
+### Test Execution Framework
+
+#### Test Markers for Selective Execution
+
+Our test suite uses pytest markers for granular test selection:
+
+- `@pytest.mark.llm_integration`: Tests requiring real LLM API calls (OpenAI, DeepInfra)
+- `@pytest.mark.celery_integration`: Tests requiring real Celery/Redis infrastructure
+- `@pytest.mark.slow`: Tests with longer execution times (>10 seconds)
+
+#### Common Test Execution Patterns
+
+```bash
+# 🚀 Fast development cycle (Tier 1) - ~6 seconds (measured)
+poetry run pytest -m "not slow and not llm_integration and not celery_integration" -v
+
+# 🧪 Full Celery integration testing (Tier 2) - ~30-60 seconds
+poetry run pytest -m "celery_integration" -v
+
+# 🔬 Real LLM integration testing (requires API keys) - ~60-120 seconds
+poetry run pytest -m "llm_integration" -v
+
+# ⚡ Unit tests only (fastest) - ~2 seconds
+poetry run pytest tests/shared/ tests/stories/test_unit.py tests/llm/test_unit.py tests/tasks/test_task_service.py -v
+
+# 🎯 Component-specific testing
+poetry run pytest tests/tasks/ -v              # Task management tests (~2s)
+poetry run pytest tests/stories/test_integration_async.py -v  # Async story tests
+poetry run pytest tests/e2e/test_workflows_async.py -v       # E2E workflows
+```
+
+#### Test Environment Configuration
+
+```bash
+# Development environment (SQLite, mocked services)
+poetry run pytest
+
+# Production-like testing (MySQL, real services)
+TEST_DATABASE_URL="mysql+mysqlconnector://user:pass@localhost:3307/test_db" \
+poetry run pytest -m "celery_integration"
+```
+
+## Running Tests (Legacy Commands)
 
 ```bash
 # Run all tests
