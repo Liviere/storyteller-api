@@ -185,13 +185,6 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Poetry: Run Celery Integration Tests",
-			"type": "shell",
-			"command": "poetry run pytest tests/tasks/test_celery_integration.py -v -m celery_integration",
-			"group": "test",
-			"problemMatcher": []
-		},
-		{
 			"label": "Poetry: Run Stories Celery Integration Tests",
 			"type": "shell",
 			"command": "poetry run pytest tests/stories/test_integration_celery.py -v -m celery_integration",

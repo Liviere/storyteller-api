@@ -27,8 +27,6 @@ tests/
 ├── __init__.py                      # Package marker
 ├── conftest.py                      # Core test configuration and fixtures
 ├── README.md                        # This file
-├── CELERY_TESTING_GUIDE.md          # 📖 Comprehensive Celery testing guide
-├── CELERY_INTEGRATION_TESTS.md      # 📖 Integration testing documentation
 │
 ├── shared/                          # 🧱 Foundation Components
 │   ├── __init__.py
@@ -42,7 +40,6 @@ tests/
 │   ├── conftest.py                  # Celery fixtures and mock services
 │   ├── test_task_service.py         # TaskService unit tests (mocked)
 │   ├── test_tasks_api.py            # Task API endpoints (/api/v1/tasks/*)
-│   ├── test_celery_integration.py   # Real Celery worker tests
 │   └── README.md                    # Task testing documentation
 │
 ├── stories/                         # 📚 Story Management
@@ -90,7 +87,6 @@ tests/
 
 - **test_task_service.py** (17 tests): TaskService unit tests with mocked Celery
 - **test_tasks_api.py** (13 tests): Task API endpoints (/api/v1/tasks/\*) testing
-- **test_celery_integration.py** (13 tests): Real Celery worker integration tests
 
 ### Stories Router Tests (`tests/stories/`)
 

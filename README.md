@@ -294,8 +294,6 @@ The project features a **modern, production-grade testing architecture** designe
 ```
 tests/
 ├── conftest.py                      # Core test configuration and fixtures
-├── CELERY_TESTING_GUIDE.md          # 📖 Comprehensive Celery testing guide
-├── CELERY_INTEGRATION_TESTS.md      # 📖 Integration testing documentation
 │
 ├── shared/                          # 🧱 Foundation Components
 │   ├── test_models.py               # SQLAlchemy model validation
@@ -305,8 +303,7 @@ tests/
 ├── tasks/ 🆕                        # ⚡ Celery Task Management
 │   ├── conftest.py                  # Celery fixtures and mock services
 │   ├── test_task_service.py         # TaskService unit tests (mocked)
-│   ├── test_tasks_api.py            # Task API endpoints (/api/v1/tasks/*)
-│   └── test_celery_integration.py   # Real Celery worker tests
+│   └── test_tasks_api.py            # Task API endpoints (/api/v1/tasks/*)
 │
 ├── stories/                         # 📚 Story Management
 │   ├── test_unit.py                 # Business logic validation
@@ -365,7 +362,7 @@ poetry run pytest -m celery_integration -v
 # 3. Specific integration suites
 poetry run pytest tests/stories/test_integration_celery.py -v    # Stories + Celery
 poetry run pytest tests/llm/test_integration_celery.py -v       # LLM + Celery
-poetry run pytest tests/tasks/test_celery_integration.py -v     # Task management
+poetry run pytest tests/tasks/ -v                              # Task management
 ```
 
 #### **Coverage and Comprehensive Testing**
