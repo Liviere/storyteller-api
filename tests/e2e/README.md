@@ -85,8 +85,8 @@ async def test_complete_story_generation_workflow():
 
 ```bash
 # Required for real async processing
-./celery-setup.sh start    # Redis broker
-./celery-setup.sh worker   # Celery worker
+# Start Celery infrastructure
+./docker-setup.sh celery   # Redis + Worker + Flower in containers
 
 # LLM API keys for real story operations
 export OPENAI_API_KEY="your-openai-key"
@@ -172,8 +172,8 @@ poetry run pytest tests/e2e/test_workflows.py.deprecated -m "not llm_integration
 
 ```bash
 # Start required infrastructure
-./celery-setup.sh start
-./celery-setup.sh worker
+./docker-setup.sh celery
+# Worker included in celery profile
 
 # Set LLM API keys
 export OPENAI_API_KEY="your-openai-key"
@@ -247,11 +247,11 @@ _Cost estimates based on OpenAI gpt-3.5-turbo pricing for workflow tests_
 poetry run pytest tests/e2e/test_workflows_async.py::test_specific_workflow -v -s
 
 # Check Celery worker status during failures
-./celery-setup.sh status
-./celery-setup.sh logs
+./docker-setup.sh status
+./docker-setup.sh logs
 
 # Monitor task processing
-./celery-setup.sh flower  # Web interface at http://localhost:5555
+# Flower available at http://localhost:5555 (included in celery profile)
 ```
 
 ### Performance Analysis

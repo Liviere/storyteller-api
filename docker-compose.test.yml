@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MySQL Database for Testing
   mysql-test:
@@ -13,8 +11,6 @@ services:
       MYSQL_PASSWORD: test_pass
     ports:
       - '3307:3306' # Different port to avoid conflicts
-    volumes:
-      - mysql_test_data:/var/lib/mysql
     networks:
       - test-network
     healthcheck:
@@ -23,9 +19,22 @@ services:
       retries: 10
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
-volumes:
-  mysql_test_data:
-    driver: local
+  # Redis for Testing Celery Integration (optional profile)
+  redis-test:
+    image: redis:7-alpine
+    container_name: story-teller-redis-test
+    restart: unless-stopped
+    ports:
+      - '6380:6379' # Different port to avoid conflicts with dev Redis
+    command: redis-server --appendonly no # No persistence for tests
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles: ['celery', 'full']
 
 networks:
   test-network:

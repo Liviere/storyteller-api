@@ -139,8 +139,8 @@ export DEEPINFRA_API_KEY="your-deepinfra-key"
 
 ```bash
 # Start Celery infrastructure
-./celery-setup.sh start    # Redis broker
-./celery-setup.sh worker   # Celery worker
+./docker-setup.sh celery    # Redis broker
+# Worker included in celery profile   # Celery worker
 
 # Requires LLM API keys for real processing
 export OPENAI_API_KEY="your-openai-key"
@@ -243,8 +243,8 @@ poetry run pytest tests/llm/test_integration.py -v -m llm_integration
 
 ```bash
 # Start Celery infrastructure
-./celery-setup.sh start
-./celery-setup.sh worker
+./docker-setup.sh celery
+# Worker included in celery profile
 
 # Set API keys
 export OPENAI_API_KEY="your-openai-key"

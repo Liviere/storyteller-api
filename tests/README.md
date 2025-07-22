@@ -150,12 +150,13 @@ def test_async_endpoint(mock_process):
 
 **Infrastructure Requirements**:
 
-```bash
+````bash
 # Start complete integration environment
-./celery-setup.sh start    # Redis broker
-./celery-setup.sh worker   # Celery worker process
+```bash
+# Required services for Celery integration tests
+./docker-setup.sh celery   # All Celery infrastructure in containers
 # Tests can now use real TaskService functionality
-```
+````
 
 ### Test Execution Framework
 

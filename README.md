@@ -89,31 +89,87 @@ This will start:
 - FastAPI application on port 8080
 - phpMyAdmin on port 8081
 
-For Celery task processing, also start Redis and Celery workers:
+For Celery task processing, use Docker profiles:
 
 ```bash
-# Start Redis for Celery
-./celery-setup.sh start
+# Start with Celery infrastructure
+./docker-setup.sh celery
 
-# Start Celery worker (in another terminal)
-./celery-setup.sh worker
-
-# Optional: Start Flower monitoring
-./celery-setup.sh flower  # Available at http://localhost:5555
+# Or start full development environment
+./docker-setup.sh dev    # Includes Celery + tools
 ```
 
 4. Access the application:
 
 - API: http://localhost:8080
 - API Documentation: http://localhost:8080/docs
-- Database Admin: http://localhost:8081
-- Task Monitoring (if Flower started): http://localhost:5555
+- Database Admin: http://localhost:8081 (with `tools` or `full` profile)
+- Task Monitoring: http://localhost:5555 (with `celery` or `full` profile)
+- Redis UI: http://localhost:8082 (with `tools` or `full` profile)
+
+## Docker Compose Profiles
+
+The application uses Docker Compose profiles for flexible deployment:
+
+### Available Profiles
+
+- **default** (no profile): Basic application (MySQL + FastAPI)
+- **celery**: Adds async task processing (Redis + Celery Worker + Flower)
+- **tools**: Adds development tools (phpMyAdmin + Redis UI)
+- **monitoring**: Adds Flower monitoring interface
+- **full**: All services enabled
+
+### Usage Examples
+
+```bash
+# Basic development (fast startup)
+./docker-setup.sh start
+# or: docker-compose up -d
+
+# With async task processing
+./docker-setup.sh celery
+# or: docker-compose --profile celery up -d
+
+# With development tools
+./docker-setup.sh tools
+# or: docker-compose --profile tools up -d
+
+# Full development environment (recommended)
+./docker-setup.sh dev
+# or: docker-compose --profile celery --profile tools up -d
+
+# Production-like (all features, no dev tools)
+./docker-setup.sh full
+# or: docker-compose --profile full up -d
+```
+
+### Service URLs by Profile
+
+| Profile | API | Docs | phpMyAdmin | Flower | Redis UI |
+| ------- | --- | ---- | ---------- | ------ | -------- |
+| default | ✅  | ✅   | ❌         | ❌     | ❌       |
+| celery  | ✅  | ✅   | ❌         | ✅     | ❌       |
+| tools   | ✅  | ✅   | ✅         | ❌     | ✅       |
+| dev     | ✅  | ✅   | ✅         | ✅     | ✅       |
+| full    | ✅  | ✅   | ✅         | ✅     | ✅       |
 
 #### Docker Commands
 
 ```bash
-# Start services
+# Basic setup (MySQL + FastAPI only)
 ./docker-setup.sh start
+
+# With Celery for async processing
+./docker-setup.sh celery
+
+# With development tools
+./docker-setup.sh tools
+
+# Full development environment (recommended)
+./docker-setup.sh dev
+
+# Everything (production-like)
+./docker-setup.sh full
 
 # Stop services
 ./docker-setup.sh stop
@@ -127,19 +183,19 @@ For Celery task processing, also start Redis and Celery workers:
 # Migrate data from SQLite (if you have existing data)
 ./docker-setup.sh migrate
 
+# Show status
+./docker-setup.sh status
+
 # Clean up (removes all data!)
 ./docker-setup.sh clean
 
-# Test environment (isolated MySQL for testing)
-docker-compose -f docker-compose.test.yml up -d    # Start test database
-docker-compose -f docker-compose.test.yml down -v  # Clean test environment
-
-# Celery management
-./celery-setup.sh start     # Start Redis
-./celery-setup.sh stop      # Stop Redis
-./celery-setup.sh worker    # Start Celery worker
-./celery-setup.sh flower    # Start monitoring interface
-./celery-setup.sh status    # Check system status
+# Docker Compose management
+docker-compose --profile celery up -d              # Celery only
+docker-compose --profile tools up -d               # Tools only
+docker-compose --profile celery --profile tools up -d  # Both
+docker-compose --profile full up -d                # Everything# Test environment (isolated databases for testing)
+docker-compose -f docker-compose.test.yml up -d      # Start test databases
+docker-compose -f docker-compose.test.yml down       # Clean test environment
 ```
 
 ### Option 2: Local Development Setup
@@ -352,9 +408,8 @@ poetry run pytest tests/tasks/test_task_service.py tests/tasks/test_tasks_api.py
 #### **Celery Integration Tests** (Requires Infrastructure)
 
 ```bash
-# 1. Start infrastructure
-./celery-setup.sh start    # Redis
-./celery-setup.sh worker   # Celery worker
+# 1. Start infrastructure with Docker profiles
+./docker-setup.sh celery   # Redis + Celery worker + Flower
 
 # 2. Run real integration tests
 poetry run pytest -m celery_integration -v
@@ -495,14 +550,11 @@ else:
 
 ```bash
 # Required services
-./celery-setup.sh start    # Redis (port 6379)
-./celery-setup.sh worker   # Celery worker process
-# Optional: ./celery-setup.sh flower  # Monitoring UI (port 5555)
+./docker-setup.sh celery   # Redis + Celery worker + Flower (all in containers)
 
 # Database options
 # Option 1: SQLite (default, automatic)
-# Option 2: MySQL via Docker
-./docker-setup.sh start    # MySQL (port 3306)
+# Option 2: MySQL via Docker (included in celery profile)
 ```
 
 ### 📊 Test Performance Metrics
@@ -549,21 +601,20 @@ else:
 **Redis Connection Errors:**
 
 ```bash
-# Check Redis status
-redis-cli ping
+# Check Redis status via Docker
+./docker-setup.sh status
 # Start if needed
-./celery-setup.sh start
+./docker-setup.sh celery
 ```
 
 **Celery Worker Not Processing:**
 
 ```bash
 # Check worker status
-./celery-setup.sh status
-# Start worker
-./celery-setup.sh worker
-# Monitor tasks
-./celery-setup.sh flower  # Web UI at localhost:5555
+./docker-setup.sh status
+# Restart Celery services
+./docker-setup.sh stop && ./docker-setup.sh celery
+# Monitor tasks via Flower at http://localhost:5555
 ```
 
 **Database Transaction Issues:**
@@ -623,40 +674,54 @@ npm run test:performance:light   # If using VS Code tasks
 
 ### Docker Test Environment
 
-For integration testing with MySQL (same as production), use the dedicated test environment:
+For integration testing with MySQL (same as production), use the dedicated test environment with profiles:
 
 ```bash
-# Start isolated test database (MySQL on port 3307)
-docker-compose -f docker-compose.test.yml up -d
+# Basic test database (MySQL only on port 3307)
+./test-setup.sh start
+# or: docker-compose -f docker-compose.test.yml up -d
+
+# With Celery for integration tests (Redis on port 6380)
+./test-setup.sh celery
+# or: docker-compose -f docker-compose.test.yml --profile celery up -d
 
 # Run tests with MySQL instead of SQLite
-TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" \
-poetry run pytest tests/ -v
+./test-setup.sh test
+# or: TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" poetry run pytest tests/ -v
 
-# Run integration tests specifically
-TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" \
-poetry run pytest tests/test_integration.py -v
+# Run Celery integration tests
+./test-setup.sh test-celery
+# or: TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" CELERY_BROKER_URL="redis://localhost:6380/0" CELERY_RESULT_BACKEND="redis://localhost:6380/1" poetry run pytest -m celery_integration -v
 
-# Clean up test environment (removes all test data)
-docker-compose -f docker-compose.test.yml down -v
+# Show test environment status
+./test-setup.sh status
+
+# Clean up test environment (no persistent data)
+./test-setup.sh clean
+# or: docker-compose -f docker-compose.test.yml down
 ```
 
 #### Test Environment Features
 
-- **Isolated MySQL**: Separate database instance on port 3307
-- **Production parity**: Same MySQL version and configuration as production
-- **Clean state**: Each test run can start with fresh database
+- **Isolated databases**: MySQL (port 3307) and Redis (port 6380)
+- **Celery integration**: Real Redis + Celery worker testing with profiles
+- **Production parity**: Same versions and configuration as production
+- **Clean state**: Each test run starts with fresh, empty databases
+- **No persistence**: Test data is automatically discarded on container stop
 - **CI/CD ready**: Perfect for automated testing pipelines
 - **No conflicts**: Runs alongside development environment
+- **Profile support**: Choose only the services you need for testing
 
 #### Test Database Configuration
 
-| Setting       | Development          | Test Environment          |
-| ------------- | -------------------- | ------------------------- |
-| **Port**      | 3306                 | 3307                      |
-| **Database**  | `storyteller`        | `storyteller_test`        |
-| **User**      | `storyteller_user`   | `test_user`               |
-| **Container** | `story-teller-mysql` | `story-teller-mysql-test` |
+| Service             | Development          | Test Environment          |
+| ------------------- | -------------------- | ------------------------- |
+| **MySQL Port**      | 3306                 | 3307                      |
+| **Redis Port**      | 6379                 | 6380                      |
+| **MySQL DB**        | `storyteller`        | `storyteller_test`        |
+| **MySQL User**      | `storyteller_user`   | `test_user`               |
+| **MySQL Container** | `story-teller-mysql` | `story-teller-mysql-test` |
+| **Redis Container** | `story-teller-redis` | `story-teller-redis-test` |
 
 ## Performance Testing
 

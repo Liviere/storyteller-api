@@ -95,8 +95,7 @@ async def test_async_story_generation(async_client, mock_task_service):
 
 ```bash
 # Start Celery infrastructure
-./celery-setup.sh start    # Redis broker
-./celery-setup.sh worker   # Celery worker
+./docker-setup.sh celery   # Redis + Worker + Flower
 
 # LLM API keys for real story generation
 export OPENAI_API_KEY="your-openai-key"
@@ -172,8 +171,8 @@ poetry run pytest tests/stories/test_integration.py -v
 
 ```bash
 # Start Celery infrastructure
-./celery-setup.sh start
-./celery-setup.sh worker
+./docker-setup.sh celery
+# Worker included in celery profile
 
 # Set LLM API keys
 export OPENAI_API_KEY="your-openai-key"

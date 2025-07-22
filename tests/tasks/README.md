@@ -132,10 +132,10 @@ These provide comprehensive real-worker testing for their respective domains.
 poetry run pytest tests/tasks/test_task_service.py::test_specific_function -v -s
 
 # Check Celery worker status
-./celery-setup.sh status
+./docker-setup.sh status
 
 # View worker logs during testing
-./celery-setup.sh logs
+./docker-setup.sh logs
 ```
 
 ## 🔧 Test Configuration
