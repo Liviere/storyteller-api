@@ -55,6 +55,47 @@ REST API for managing stories built with FastAPI and Poetry.
 
 ## Quick Start
 
+### Port Configuration
+
+The application uses flexible port configuration through environment variables. All ports can be customized via the `.env` file.
+
+#### Default Ports:
+
+- **FastAPI**: 8080
+- **MySQL**: 3306
+- **Redis**: 6379
+- **phpMyAdmin**: 8081
+- **Flower (Celery monitoring)**: 5555
+- **Redis UI**: 8082
+- **Test MySQL**: 3307
+- **Test Redis**: 6380
+
+#### Port Management:
+
+```bash
+# Check current port configuration and availability
+./configure-ports.sh show
+
+# Auto-fix any port conflicts
+./configure-ports.sh fix
+
+# Reset to default ports
+./configure-ports.sh reset
+
+# Validate ports without changing them
+./configure-ports.sh validate
+```
+
+#### Auto-Port Assignment:
+
+If you have port conflicts, you can use auto-port assignment:
+
+```bash
+# Start services with automatic port assignment
+./docker-setup.sh start --auto-ports
+./docker-setup.sh dev --auto-ports
+```
+
 ### Option 1: Docker Setup (Recommended)
 
 #### Prerequisites
@@ -96,7 +137,7 @@ For Celery task processing, use Docker profiles:
 ./docker-setup.sh celery
 
 # Or start full development environment
-./docker-setup.sh dev    # Includes Celery + tools
+./docker-setup.sh dev
 ```
 
 4. Access the application:

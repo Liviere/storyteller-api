@@ -5,6 +5,15 @@
 
 set -e
 
+# Load environment variables if .env exists
+if [ -f .env ]; then
+    source .env
+fi
+
+# Set default test port values if not defined in .env
+TEST_MYSQL_PORT=${TEST_MYSQL_HOST_PORT:-3307}
+TEST_REDIS_PORT=${TEST_REDIS_HOST_PORT:-6380}
+
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEST_COMPOSE_FILE="$PROJECT_DIR/docker-compose.test.yml"
 
@@ -54,8 +63,8 @@ show_help() {
     echo "  $0 test-celery              # Run Celery integration tests"
     echo ""
     echo "Test databases run on different ports:"
-    echo "  - MySQL: localhost:3307 (vs 3306 for dev)"
-    echo "  - Redis: localhost:6380 (vs 6379 for dev)"
+    echo "  - MySQL: localhost:$TEST_MYSQL_PORT (vs ${MYSQL_HOST_PORT:-3306} for dev)"
+    echo "  - Redis: localhost:$TEST_REDIS_PORT (vs ${REDIS_HOST_PORT:-6379} for dev)"
 }
 
 start_basic() {
@@ -68,7 +77,7 @@ start_basic() {
             print_success "MySQL test database is ready!"
             echo ""
             echo "Test Database Info:"
-            echo "  Host: localhost:3307"
+            echo "  Host: localhost:$TEST_MYSQL_PORT"
             echo "  Database: storyteller_test"
             echo "  User: test_user"
             echo "  Password: test_pass"
@@ -93,8 +102,8 @@ start_with_celery() {
     print_success "Test environment with Celery ready!"
     echo ""
     echo "Test Environment Info:"
-    echo "  MySQL: localhost:3307"
-    echo "  Redis: localhost:6380"
+    echo "  MySQL: localhost:$TEST_MYSQL_PORT"
+    echo "  Redis: localhost:$TEST_REDIS_PORT"
     echo ""
     echo "Run Celery tests with: $0 test-celery"
 }
@@ -130,7 +139,7 @@ run_tests() {
         start_basic
     fi
     
-    export TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test"
+    export TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:$TEST_MYSQL_PORT/storyteller_test"
     poetry run pytest tests/ -v
 }
 
@@ -143,9 +152,9 @@ run_celery_tests() {
         start_with_celery
     fi
     
-    export TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test"
-    export CELERY_BROKER_URL="redis://localhost:6380/0"
-    export CELERY_RESULT_BACKEND="redis://localhost:6380/1"
+    export TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:$TEST_MYSQL_PORT/storyteller_test"
+    export CELERY_BROKER_URL="redis://localhost:$TEST_REDIS_PORT/0"
+    export CELERY_RESULT_BACKEND="redis://localhost:$TEST_REDIS_PORT/1"
     
     poetry run pytest -m celery_integration -v
 }
@@ -157,13 +166,13 @@ show_status() {
     
     # Check which services are running
     if docker-compose -f "$TEST_COMPOSE_FILE" ps mysql-test | grep -q "Up"; then
-        print_success "✅ MySQL test database: Running (port 3307)"
+        print_success "✅ MySQL test database: Running (port $TEST_MYSQL_PORT)"
     else
         print_warning "❌ MySQL test database: Not running"
     fi
     
     if docker-compose -f "$TEST_COMPOSE_FILE" ps redis-test 2>/dev/null | grep -q "Up"; then
-        print_success "✅ Redis test database: Running (port 6380)"
+        print_success "✅ Redis test database: Running (port $TEST_REDIS_PORT)"
     else
         print_warning "❌ Redis test database: Not running"
     fi

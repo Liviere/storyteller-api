@@ -7,11 +7,84 @@ set -e
 
 echo "=== Story Teller Docker Setup ==="
 
+# Load environment variables if .env exists
+if [ -f .env ]; then
+    source .env
+fi
+
+# Set default port values if not defined in .env
+APP_PORT=${APP_HOST_PORT:-8080}
+MYSQL_PORT=${MYSQL_HOST_PORT:-3306}
+PHPMYADMIN_PORT=${PHPMYADMIN_HOST_PORT:-8081}
+REDIS_PORT=${REDIS_HOST_PORT:-6379}
+FLOWER_PORT=${FLOWER_HOST_PORT:-5555}
+REDIS_UI_PORT=${REDIS_UI_HOST_PORT:-8082}
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+
+# Function to check if a port is available
+check_port_available() {
+    local port=$1
+    if command -v nc >/dev/null 2>&1; then
+        ! nc -z localhost $port >/dev/null 2>&1
+    elif command -v netstat >/dev/null 2>&1; then
+        ! netstat -tuln 2>/dev/null | grep -q ":$port "
+    else
+        # Fallback: assume port is available
+        return 0
+    fi
+}
+
+# Function to find an available port starting from a base port
+find_available_port() {
+    local base_port=$1
+    local port=$base_port
+    while ! check_port_available $port; do
+        port=$((port + 1))
+    done
+    echo $port
+}
+
+# Function to validate port configuration
+validate_ports() {
+    local ports_to_check=(
+        "APP_PORT:$APP_PORT"
+        "MYSQL_PORT:$MYSQL_PORT" 
+        "PHPMYADMIN_PORT:$PHPMYADMIN_PORT"
+        "REDIS_PORT:$REDIS_PORT"
+        "FLOWER_PORT:$FLOWER_PORT"
+        "REDIS_UI_PORT:$REDIS_UI_PORT"
+    )
+    
+    local conflicts=()
+    for port_info in "${ports_to_check[@]}"; do
+        local service_name="${port_info%%:*}"
+        local port="${port_info##*:}"
+        if ! check_port_available $port; then
+            conflicts+=("$service_name:$port")
+        fi
+    done
+    
+    if [ ${#conflicts[@]} -gt 0 ]; then
+        print_warning "Port conflicts detected:"
+        for conflict in "${conflicts[@]}"; do
+            local service="${conflict%%:*}"
+            local port="${conflict##*:}"
+            echo "  - $service (port $port) is already in use"
+        done
+        echo ""
+        print_warning "You can either:"
+        echo "  1. Stop services using these ports"
+        echo "  2. Edit .env file to use different ports"
+        echo "  3. Use auto-port-assignment with: $0 start --auto-ports"
+        return 1
+    fi
+    return 0
+}
 
 # Function to print colored output
 print_status() {
@@ -74,22 +147,38 @@ show_help() {
     echo "  $0 infrastructure           # Infrastructure only: MySQL + Redis + Tools"
     echo "  $0 production               # Everything in containers (production-like setup)"
     echo ""
+    echo "Port Configuration:"
+    echo "  Ports are configured via .env file. Current settings:"
+    echo "  - API: $APP_PORT"
+    echo "  - MySQL: $MYSQL_PORT" 
+    echo "  - phpMyAdmin: $PHPMYADMIN_PORT"
+    echo "  - Redis: $REDIS_PORT"
+    echo "  - Flower: $FLOWER_PORT"
+    echo "  - Redis UI: $REDIS_UI_PORT"
+    echo ""
     echo "Development workflow:"
     echo "  1. Run: $0 dev              # Start infrastructure"
-    echo "  2. Run API locally: poetry run uvicorn main:app --reload --port 8080"
+    echo "  2. Run API locally: poetry run uvicorn main:app --reload --port $APP_PORT"
     echo "  3. Run worker locally: poetry run celery -A app.celery_app.celery:celery_app worker --loglevel=info"
     echo ""
     echo "Available at:"
-    echo "  - API: http://localhost:8080 (local or container)"
-    echo "  - API Docs: http://localhost:8080/docs"
-    echo "  - phpMyAdmin: http://localhost:8081 (with dev/infrastructure/production)"
-    echo "  - Flower: http://localhost:5555 (with dev/production)"
-    echo "  - Redis UI: http://localhost:8082 (with dev/infrastructure/production)"
+    echo "  - API: http://localhost:$APP_PORT (local or container)"
+    echo "  - API Docs: http://localhost:$APP_PORT/docs"
+    echo "  - phpMyAdmin: http://localhost:$PHPMYADMIN_PORT (with dev/infrastructure/production)"
+    echo "  - Flower: http://localhost:$FLOWER_PORT (with dev/production)"
+    echo "  - Redis UI: http://localhost:$REDIS_UI_PORT (with dev/infrastructure/production)"
 }
 
 # Function to start basic services
 start_services() {
     print_status "Starting basic services (MySQL + FastAPI)..."
+    
+    # Validate ports before starting
+    if ! validate_ports; then
+        print_error "Port validation failed. Please resolve conflicts before starting services."
+        return 1
+    fi
+    
     docker-compose up -d mysql app
     
     print_status "Waiting for services to be ready..."
@@ -100,8 +189,8 @@ start_services() {
         print_status "Basic services started successfully!"
         echo ""
         echo "Application URLs:"
-        echo "  - API: http://localhost:8080"
-        echo "  - API Docs: http://localhost:8080/docs"
+        echo "  - API: http://localhost:$APP_PORT"
+        echo "  - API Docs: http://localhost:$APP_PORT/docs"
         echo ""
         echo "To add Celery: $0 celery"
         echo "To add tools: $0 tools"
@@ -123,11 +212,11 @@ start_infrastructure() {
     print_status "Infrastructure started successfully!"
     echo ""
     echo "Infrastructure URLs:"
-    echo "  - phpMyAdmin: http://localhost:8081"
-    echo "  - Redis UI: http://localhost:8082"
+    echo "  - phpMyAdmin: http://localhost:$PHPMYADMIN_PORT"
+    echo "  - Redis UI: http://localhost:$REDIS_UI_PORT"
     echo ""
     echo "Now you can run locally:"
-    echo "  - API: poetry run uvicorn main:app --reload --port 8080"
+    echo "  - API: poetry run uvicorn main:app --reload --port $APP_PORT"
     echo "  - Worker: poetry run celery -A app.celery_app.celery:celery_app worker --loglevel=info"
 }
 
@@ -142,12 +231,12 @@ start_development() {
     print_status "Development infrastructure started successfully!"
     echo ""
     echo "Infrastructure URLs:"
-    echo "  - phpMyAdmin: http://localhost:8081"
-    echo "  - Redis UI: http://localhost:8082"
-    echo "  - Flower monitoring: http://localhost:5555"
+    echo "  - phpMyAdmin: http://localhost:$PHPMYADMIN_PORT"
+    echo "  - Redis UI: http://localhost:$REDIS_UI_PORT"
+    echo "  - Flower monitoring: http://localhost:$FLOWER_PORT"
     echo ""
     echo "Now run your applications locally:"
-    echo "  - API: poetry run uvicorn main:app --reload --port 8080"
+    echo "  - API: poetry run uvicorn main:app --reload --port $APP_PORT"
     echo "  - Worker: poetry run celery -A app.celery_app.celery:celery_app worker --loglevel=info"
     echo ""
     echo "This gives you full development flexibility with infrastructure support!"
@@ -164,11 +253,11 @@ start_production() {
     print_status "All services started successfully!"
     echo ""
     echo "Application URLs:"
-    echo "  - API: http://localhost:8080"
-    echo "  - API Docs: http://localhost:8080/docs"
-    echo "  - phpMyAdmin: http://localhost:8081"
-    echo "  - Redis UI: http://localhost:8082"
-    echo "  - Flower monitoring: http://localhost:5555"
+    echo "  - API: http://localhost:$APP_PORT"
+    echo "  - API Docs: http://localhost:$APP_PORT/docs"
+    echo "  - phpMyAdmin: http://localhost:$PHPMYADMIN_PORT"
+    echo "  - Redis UI: http://localhost:$REDIS_UI_PORT"
+    echo "  - Flower monitoring: http://localhost:$FLOWER_PORT"
     echo ""
     echo "Complete production stack is running!"
 }
@@ -277,21 +366,66 @@ clean_all() {
     fi
 }
 
+# Function to auto-assign available ports
+auto_assign_ports() {
+    print_status "Auto-assigning available ports..."
+    
+    APP_PORT=$(find_available_port $APP_PORT)
+    MYSQL_PORT=$(find_available_port $MYSQL_PORT)
+    PHPMYADMIN_PORT=$(find_available_port $PHPMYADMIN_PORT)
+    REDIS_PORT=$(find_available_port $REDIS_PORT)
+    FLOWER_PORT=$(find_available_port $FLOWER_PORT)
+    REDIS_UI_PORT=$(find_available_port $REDIS_UI_PORT)
+    
+    # Export for docker-compose
+    export APP_HOST_PORT=$APP_PORT
+    export MYSQL_HOST_PORT=$MYSQL_PORT
+    export PHPMYADMIN_HOST_PORT=$PHPMYADMIN_PORT
+    export REDIS_HOST_PORT=$REDIS_PORT
+    export FLOWER_HOST_PORT=$FLOWER_PORT
+    export REDIS_UI_HOST_PORT=$REDIS_UI_PORT
+    
+    print_status "Assigned ports:"
+    echo "  - API: $APP_PORT"
+    echo "  - MySQL: $MYSQL_PORT"
+    echo "  - phpMyAdmin: $PHPMYADMIN_PORT"
+    echo "  - Redis: $REDIS_PORT"
+    echo "  - Flower: $FLOWER_PORT"
+    echo "  - Redis UI: $REDIS_UI_PORT"
+    echo ""
+}
+
 # Main script logic
 case "${1:-}" in
     start)
+        # Check for auto-ports flag
+        if [[ "${2:-}" == "--auto-ports" ]]; then
+            auto_assign_ports
+        fi
         start_services
         ;;
     infrastructure)
+        if [[ "${2:-}" == "--auto-ports" ]]; then
+            auto_assign_ports
+        fi
         start_infrastructure
         ;;
     tools)
+        if [[ "${2:-}" == "--auto-ports" ]]; then
+            auto_assign_ports
+        fi
         start_with_tools
         ;;
     dev|development)
+        if [[ "${2:-}" == "--auto-ports" ]]; then
+            auto_assign_ports
+        fi
         start_development
         ;;
     production)
+        if [[ "${2:-}" == "--auto-ports" ]]; then
+            auto_assign_ports
+        fi
         start_production
         ;;
     stop)
