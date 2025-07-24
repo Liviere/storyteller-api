@@ -94,7 +94,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    profiles: ['celery', 'infrastructure', 'tools', 'monitoring', 'full']
+    profiles:
+      ['celery', 'infrastructure', 'tools', 'monitoring', 'production', 'full']
 
   # Celery Worker
   celery-worker:

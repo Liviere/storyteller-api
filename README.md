@@ -154,63 +154,91 @@ The application uses Docker Compose profiles for flexible deployment:
 
 ### Available Profiles
 
-- **default** (no profile): Basic application (MySQL + FastAPI)
-- **celery**: Adds async task processing (Redis + Celery Worker + Flower)
-- **tools**: Adds development tools (phpMyAdmin + Redis UI)
-- **monitoring**: Adds Flower monitoring interface
-- **full**: All services enabled
+- **default** (no profile): MySQL database only
+- **production**: FastAPI app + Celery worker + MySQL
+- **infrastructure**: MySQL + Redis + phpMyAdmin + Redis UI (for local development)
+- **tools**: Same as infrastructure (MySQL + Redis + phpMyAdmin + Redis UI)
+- **celery**: MySQL + Redis + Flower (for Celery development)
+- **monitoring**: MySQL + Redis + Flower
+- **dev**: Combines tools + monitoring (for local development)
+- **full**: All infrastructure services (phpMyAdmin + Redis UI + Flower)
 
 ### Usage Examples
 
 ```bash
-# Basic development (fast startup)
+# Default setup (MySQL only) - matches pure Docker profile
 ./docker-setup.sh start
 # or: docker-compose up -d
 
-# With async task processing
-./docker-setup.sh celery
-# or: docker-compose --profile celery up -d
+# Infrastructure only (for local API/worker development)
+./docker-setup.sh infrastructure
+# or: docker-compose --profile infrastructure up -d
 
-# With development tools
+# Development tools (same as infrastructure)
 ./docker-setup.sh tools
 # or: docker-compose --profile tools up -d
 
-# Full development environment (recommended)
-./docker-setup.sh dev
-# or: docker-compose --profile celery --profile tools up -d
+# Celery infrastructure (MySQL + Redis + Flower)
+./docker-setup.sh celery
+# or: docker-compose --profile celery up -d
 
-# Production-like (all features, no dev tools)
+# Development infrastructure with monitoring (recommended for local development)
+./docker-setup.sh dev
+# or: docker-compose --profile tools --profile monitoring up -d
+
+# All infrastructure services
 ./docker-setup.sh full
 # or: docker-compose --profile full up -d
+
+# Production setup (App + Worker) - matches pure Docker profile
+./docker-setup.sh production
+# or: docker-compose --profile production up -d
+
+# Everything (Production + Tools + Monitoring)
+./docker-setup.sh all
+# or: docker-compose --profile production --profile tools --profile monitoring up -d
 ```
 
 ### Service URLs by Profile
 
-| Profile | API | Docs | phpMyAdmin | Flower | Redis UI |
-| ------- | --- | ---- | ---------- | ------ | -------- |
-| default | ✅  | ✅   | ❌         | ❌     | ❌       |
-| celery  | ✅  | ✅   | ❌         | ✅     | ❌       |
-| tools   | ✅  | ✅   | ✅         | ❌     | ✅       |
-| dev     | ✅  | ✅   | ✅         | ✅     | ✅       |
-| full    | ✅  | ✅   | ✅         | ✅     | ✅       |
+| Profile/Command             | MySQL | Redis | API | Docs | phpMyAdmin | Flower | Redis UI | Celery Worker | Notes                                        |
+| --------------------------- | ----- | ----- | --- | ---- | ---------- | ------ | -------- | ------------- | -------------------------------------------- |
+| default                     | ✅    | ❌    | ❌  | ❌   | ❌         | ❌     | ❌       | ❌            | MySQL only                                   |
+| infrastructure              | ✅    | ✅    | ❌  | ❌   | ✅         | ❌     | ✅       | ❌            | Infrastructure only (for local dev)          |
+| tools                       | ✅    | ✅    | ❌  | ❌   | ✅         | ❌     | ✅       | ❌            | Same as infrastructure                       |
+| celery                      | ✅    | ✅    | ❌  | ❌   | ❌         | ✅     | ❌       | ❌            | MySQL + Redis + Flower (for local dev)       |
+| monitoring                  | ✅    | ✅    | ❌  | ❌   | ❌         | ✅     | ❌       | ❌            | MySQL + Redis + Flower                       |
+| dev                         | ✅    | ✅    | ❌  | ❌   | ✅         | ✅     | ✅       | ❌            | Infrastructure + monitoring (for local dev)  |
+| production                  | ✅    | ✅    | ✅  | ✅   | ❌         | ❌     | ❌       | ✅            | App + Worker (complete production setup)     |
+| full                        | ✅    | ✅    | ❌  | ❌   | ✅         | ✅     | ✅       | ❌            | All infrastructure services                  |
+| **`./docker-setup.sh all`** | ✅    | ✅    | ✅  | ✅   | ✅         | ✅     | ✅       | ✅            | Everything (production + tools + monitoring) |
 
 #### Docker Commands
 
 ```bash
-# Basic setup (MySQL + FastAPI only)
+# Default setup (MySQL only) - matches Docker profile
 ./docker-setup.sh start
 
-# With Celery for async processing
-./docker-setup.sh celery
+# Infrastructure only (MySQL + Redis + Tools) - for local development
+./docker-setup.sh infrastructure
 
-# With development tools
+# With development tools (MySQL + Redis + Tools) - same as infrastructure
 ./docker-setup.sh tools
 
-# Full development environment (recommended)
+# Celery infrastructure (MySQL + Redis + Flower) - for local development
+./docker-setup.sh celery
+
+# Development infrastructure (MySQL + Redis + monitoring) - for local development
 ./docker-setup.sh dev
 
-# Everything (production-like)
+# All infrastructure services (phpMyAdmin + Redis UI + Flower)
 ./docker-setup.sh full
+
+# Production setup (App + Worker) - matches Docker profile
+./docker-setup.sh production
+
+# Everything (Production + Tools + Monitoring)
+./docker-setup.sh all
 
 # Stop services
 ./docker-setup.sh stop
@@ -231,10 +259,15 @@ The application uses Docker Compose profiles for flexible deployment:
 ./docker-setup.sh clean
 
 # Docker Compose management
-docker-compose --profile celery up -d              # Celery only
-docker-compose --profile tools up -d               # Tools only
-docker-compose --profile celery --profile tools up -d  # Both
-docker-compose --profile full up -d                # Everything# Test environment (isolated databases for testing)
+docker-compose --profile infrastructure up -d          # Infrastructure only
+docker-compose --profile tools up -d                   # Tools only (same as infrastructure)
+docker-compose --profile celery up -d                  # Celery infrastructure
+docker-compose --profile monitoring up -d              # Monitoring only
+docker-compose --profile production up -d              # Production (app + worker)
+docker-compose --profile full up -d                    # All infrastructure
+docker-compose --profile tools --profile monitoring up -d  # Development infrastructure
+
+# Test environment (isolated databases for testing)
 docker-compose -f docker-compose.test.yml up -d      # Start test databases
 docker-compose -f docker-compose.test.yml down       # Clean test environment
 ```

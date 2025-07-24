@@ -126,11 +126,14 @@ show_help() {
     echo "Usage: $0 [command]"
     echo ""
     echo "Commands:"
-    echo "  start        Start basic services (MySQL + FastAPI)"
+    echo "  start        Start default services (MySQL only)"
     echo "  infrastructure Start infrastructure only (MySQL + Redis + Tools) - for local development"
     echo "  tools        Start services with development tools (phpMyAdmin + Redis UI)"
+    echo "  celery       Start Celery infrastructure (MySQL + Redis + Flower) - for local development"
     echo "  dev          Start development infrastructure (MySQL + Redis + monitoring) - run API/worker locally"
-    echo "  production   Start all services (full production setup)"
+    echo "  full         Start all infrastructure services (phpMyAdmin + Redis UI + Flower)"
+    echo "  production   Start production services (App + Worker)"
+    echo "  all          Start all services (complete setup)"
     echo "  stop         Stop all services"
     echo "  restart      Restart all services"
     echo "  build        Build application image"
@@ -142,10 +145,13 @@ show_help() {
     echo "  help         Show this help message"
     echo ""
     echo "Profile Examples:"
-    echo "  $0 start                    # Basic: MySQL + FastAPI (quick demo)"
-    echo "  $0 dev                      # Infrastructure: MySQL + Redis + monitoring (recommended for development)"
+    echo "  $0 start                    # Default: MySQL only (matches docker-compose up -d)"
     echo "  $0 infrastructure           # Infrastructure only: MySQL + Redis + Tools"
-    echo "  $0 production               # Everything in containers (production-like setup)"
+    echo "  $0 celery                   # Celery infrastructure: MySQL + Redis + Flower"
+    echo "  $0 dev                      # Development: Infrastructure + monitoring (recommended)"
+    echo "  $0 full                     # All infrastructure: phpMyAdmin + Redis UI + Flower"
+    echo "  $0 production               # Production: App + Worker (matches --profile production)"
+    echo "  $0 all                      # Everything: Production + Tools + Monitoring"
     echo ""
     echo "Port Configuration:"
     echo "  Ports are configured via .env file. Current settings:"
@@ -171,7 +177,7 @@ show_help() {
 
 # Function to start basic services
 start_services() {
-    print_status "Starting basic services (MySQL + FastAPI)..."
+    print_status "Starting default services (MySQL only)..."
     
     # Validate ports before starting
     if ! validate_ports; then
@@ -179,21 +185,20 @@ start_services() {
         return 1
     fi
     
-    docker-compose up -d mysql app
+    docker-compose up -d
     
     print_status "Waiting for services to be ready..."
     sleep 10
     
     # Check if services are running
     if docker-compose ps | grep -q "Up"; then
-        print_status "Basic services started successfully!"
+        print_status "Default services started successfully!"
         echo ""
-        echo "Application URLs:"
-        echo "  - API: http://localhost:$APP_PORT"
-        echo "  - API Docs: http://localhost:$APP_PORT/docs"
+        echo "Services running:"
+        echo "  - MySQL database on port $MYSQL_PORT"
         echo ""
-        echo "To add Celery: $0 celery"
-        echo "To add tools: $0 tools"
+        echo "To add API, run: docker-compose up -d --profile production"
+        echo "To add tools, run: docker-compose up -d --profile tools"
         echo "To view logs: $0 logs"
         echo "To stop services: $0 stop"
     else
@@ -210,6 +215,25 @@ start_infrastructure() {
     sleep 10
     
     print_status "Infrastructure started successfully!"
+    echo ""
+    echo "Infrastructure URLs:"
+    echo "  - phpMyAdmin: http://localhost:$PHPMYADMIN_PORT"
+    echo "  - Redis UI: http://localhost:$REDIS_UI_PORT"
+    echo ""
+    echo "Now you can run locally:"
+    echo "  - API: poetry run uvicorn main:app --reload --port $APP_PORT"
+    echo "  - Worker: poetry run celery -A app.celery_app.celery:celery_app worker --loglevel=info"
+}
+
+# Function to start services with development tools
+start_with_tools() {
+    print_status "Starting services with development tools (MySQL + Redis + Tools)..."
+    docker-compose --profile tools up -d
+    
+    print_status "Waiting for services to be ready..."
+    sleep 10
+    
+    print_status "Services with tools started successfully!"
     echo ""
     echo "Infrastructure URLs:"
     echo "  - phpMyAdmin: http://localhost:$PHPMYADMIN_PORT"
@@ -242,9 +266,71 @@ start_development() {
     echo "This gives you full development flexibility with infrastructure support!"
 }
 
-# Function to start all services (production-like)
+# Function to start Celery infrastructure
+start_celery() {
+    print_status "Starting Celery infrastructure (MySQL + Redis + Flower)..."
+    docker-compose --profile celery up -d
+    
+    print_status "Waiting for services to be ready..."
+    sleep 10
+    
+    print_status "Celery infrastructure started successfully!"
+    echo ""
+    echo "Infrastructure URLs:"
+    echo "  - Flower monitoring: http://localhost:$FLOWER_PORT"
+    echo ""
+    echo "Now run your applications locally:"
+    echo "  - API: poetry run uvicorn main:app --reload --port $APP_PORT"
+    echo "  - Worker: poetry run celery -A app.celery_app.celery:celery_app worker --loglevel=info"
+}
+
+# Function to start all infrastructure services
+start_full() {
+    print_status "Starting all infrastructure services (full profile)..."
+    docker-compose --profile full up -d
+    
+    print_status "Waiting for services to be ready..."
+    sleep 10
+    
+    print_status "All infrastructure services started successfully!"
+    echo ""
+    echo "Infrastructure URLs:"
+    echo "  - phpMyAdmin: http://localhost:$PHPMYADMIN_PORT"
+    echo "  - Redis UI: http://localhost:$REDIS_UI_PORT"
+    echo "  - Flower monitoring: http://localhost:$FLOWER_PORT"
+    echo ""
+    echo "Now run your applications locally:"
+    echo "  - API: poetry run uvicorn main:app --reload --port $APP_PORT"
+    echo "  - Worker: poetry run celery -A app.celery_app.celery:celery_app worker --loglevel=info"
+}
+
+# Function to start production services
 start_production() {
-    print_status "Starting all services (production setup)..."
+    print_status "Starting production services (App + Worker)..."
+    docker-compose --profile production up -d
+    
+    print_status "Waiting for services to be ready..."
+    sleep 15
+    
+    print_status "Production services started successfully!"
+    echo ""
+    echo "Application URLs:"
+    echo "  - API: http://localhost:$APP_PORT"
+    echo "  - API Docs: http://localhost:$APP_PORT/docs"
+    echo ""
+    echo "Production setup running:"
+    echo "  - MySQL database"
+    echo "  - FastAPI application"
+    echo "  - Celery worker"
+    echo ""
+    echo "To add tools, run: docker-compose up -d --profile tools"
+    echo "To add monitoring, run: docker-compose up -d --profile monitoring"
+    echo "For full setup, use: $0 all"
+}
+
+# Function to start all services (everything)
+start_all() {
+    print_status "Starting all services (complete setup)..."
     docker-compose --profile production --profile tools --profile monitoring up -d
     
     print_status "Waiting for services to be ready..."
@@ -259,7 +345,7 @@ start_production() {
     echo "  - Redis UI: http://localhost:$REDIS_UI_PORT"
     echo "  - Flower monitoring: http://localhost:$FLOWER_PORT"
     echo ""
-    echo "Complete production stack is running!"
+    echo "Complete stack is running!"
 }
 
 # Function to show status
@@ -416,17 +502,35 @@ case "${1:-}" in
         fi
         start_with_tools
         ;;
+    celery)
+        if [[ "${2:-}" == "--auto-ports" ]]; then
+            auto_assign_ports
+        fi
+        start_celery
+        ;;
     dev|development)
         if [[ "${2:-}" == "--auto-ports" ]]; then
             auto_assign_ports
         fi
         start_development
         ;;
+    full)
+        if [[ "${2:-}" == "--auto-ports" ]]; then
+            auto_assign_ports
+        fi
+        start_full
+        ;;
     production)
         if [[ "${2:-}" == "--auto-ports" ]]; then
             auto_assign_ports
         fi
         start_production
+        ;;
+    all)
+        if [[ "${2:-}" == "--auto-ports" ]]; then
+            auto_assign_ports
+        fi
+        start_all
         ;;
     stop)
         stop_services
