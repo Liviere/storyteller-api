@@ -38,20 +38,40 @@ REST API for managing stories built with FastAPI and Poetry.
 
 - **Error monitoring and tracking with Sentry**
 - **Docker and docker-compose for easy deployment**
-- **Isolated test environment with dedicated MySQL instance**
-- **Performance testing with Locust**
 - Automatic API documentation with Swagger UI
 - CORS support for frontend integration
 - Modern dependency management with Poetry
-- Development tools: Black, isort, flake8, mypy, pytest
+- Development tools: Black, isort, flake8, mypy
 
-### 🧪 Testing & Quality Assurance
+## ✅ Testing
 
-- **Comprehensive async testing with Celery integration**
-- **Two-tier testing strategy (unit mocks + integration tests)**
-- **Real worker testing with Redis and Celery infrastructure**
-- **Production-grade end-to-end testing**
-- **VS Code task automation for development workflows**
+The application features a **three-tier testing strategy** for efficient development and reliable deployment:
+
+### 🏗️ Test Tiers
+
+- **Unit Tests** (`@pytest.mark.unit`) - Fast tests with mocked dependencies (SQLite, mocked services)
+- **Integration Tests** (`@pytest.mark.integration`) - Database integration with MySQL test database
+- **End-to-End Tests** (`@pytest.mark.e2e`) - Full infrastructure validation with MySQL, Redis, Celery, and real LLM providers
+
+### 🚀 Launching tests
+
+```bash
+# All tests (unit, integration, e2e)
+./test-setup.sh init              # Initialize full test environment with MySQL, Redis, and Celery Worker
+./test-setup.sh test              # Run all tests (unit, integration, e2e)
+
+# or selectively run tests
+./test-setup.sh test-unit         # Run unit tests only
+./test-setup.sh test-integration  # Run integration tests with MySQL
+./test-setup.sh test-e2e          # Run end-to-end tests with full infrastructure
+
+./test-setup.sh stop              # Stop all test services
+./test-setup.sh clean             # Clean up test environment (removes all data)
+```
+
+### 📖 Detailed Documentation
+
+For comprehensive testing documentation, environment setup, and troubleshooting, see [tests/README.md](tests/README.md).
 
 ## Quick Start
 
@@ -201,17 +221,16 @@ The application uses Docker Compose profiles for flexible deployment:
 
 ### Service URLs by Profile
 
-| Profile/Command             | MySQL | Redis | API | Docs | phpMyAdmin | Flower | Redis UI | Celery Worker | Notes                                        |
-| --------------------------- | ----- | ----- | --- | ---- | ---------- | ------ | -------- | ------------- | -------------------------------------------- |
-| default                     | ✅    | ❌    | ❌  | ❌   | ❌         | ❌     | ❌       | ❌            | MySQL only                                   |
-| infrastructure              | ✅    | ✅    | ❌  | ❌   | ✅         | ❌     | ✅       | ❌            | Infrastructure only (for local dev)          |
-| tools                       | ✅    | ✅    | ❌  | ❌   | ✅         | ❌     | ✅       | ❌            | Same as infrastructure                       |
-| celery                      | ✅    | ✅    | ❌  | ❌   | ❌         | ✅     | ❌       | ❌            | MySQL + Redis + Flower (for local dev)       |
-| monitoring                  | ✅    | ✅    | ❌  | ❌   | ❌         | ✅     | ❌       | ❌            | MySQL + Redis + Flower                       |
-| dev                         | ✅    | ✅    | ❌  | ❌   | ✅         | ✅     | ✅       | ❌            | Infrastructure + monitoring (for local dev)  |
-| production                  | ✅    | ✅    | ✅  | ✅   | ❌         | ❌     | ❌       | ✅            | App + Worker (complete production setup)     |
-| full                        | ✅    | ✅    | ❌  | ❌   | ✅         | ✅     | ✅       | ❌            | All infrastructure services                  |
-| **`./docker-setup.sh all`** | ✅    | ✅    | ✅  | ✅   | ✅         | ✅     | ✅       | ✅            | Everything (production + tools + monitoring) |
+| Profile/Command | MySQL | Redis | API | Docs | phpMyAdmin | Flower | Redis UI | Celery Worker | Notes                                        |
+| --------------- | ----- | ----- | --- | ---- | ---------- | ------ | -------- | ------------- | -------------------------------------------- |
+| default         | ✅    | ❌    | ❌  | ❌   | ❌         | ❌     | ❌       | ❌            | MySQL only                                   |
+| infrastructure  | ✅    | ✅    | ❌  | ❌   | ✅         | ❌     | ✅       | ❌            | Infrastructure only (for local dev)          |
+| tools           | ✅    | ✅    | ❌  | ❌   | ✅         | ❌     | ✅       | ❌            | Same as infrastructure                       |
+| celery          | ✅    | ✅    | ❌  | ❌   | ❌         | ✅     | ❌       | ❌            | MySQL + Redis + Flower (for local dev)       |
+| monitoring      | ✅    | ✅    | ❌  | ❌   | ❌         | ✅     | ❌       | ❌            | MySQL + Redis + Flower                       |
+| dev             | ✅    | ✅    | ❌  | ❌   | ✅         | ✅     | ✅       | ❌            | Infrastructure + monitoring (for local dev)  |
+| production      | ✅    | ✅    | ✅  | ✅   | ❌         | ❌     | ❌       | ✅            | App + Worker (complete production setup)     |
+| full            | ✅    | ✅    | ✅  | ✅   | ✅         | ✅     | ✅       | ✅            | Everything (production + tools + monitoring) |
 
 #### Docker Commands
 
@@ -266,10 +285,6 @@ docker-compose --profile monitoring up -d              # Monitoring only
 docker-compose --profile production up -d              # Production (app + worker)
 docker-compose --profile full up -d                    # All infrastructure
 docker-compose --profile tools --profile monitoring up -d  # Development infrastructure
-
-# Test environment (isolated databases for testing)
-docker-compose -f docker-compose.test.yml up -d      # Start test databases
-docker-compose -f docker-compose.test.yml down       # Clean test environment
 ```
 
 ### Option 2: Local Development Setup
@@ -371,15 +386,7 @@ export DEEPINFRA_API_KEY="your-deepinfra-key"
 - **Available models**: `GET /api/v1/llm/models`
 - **Usage statistics**: `GET /api/v1/llm/stats`
 
-### Testing LLM Integration
-
-Test the LLM functionality without API keys:
-
-```bash
-python test_llm.py
-```
-
-### Development Tools
+## Development Tools
 
 ```bash
 # Format code with Black
@@ -393,284 +400,31 @@ poetry run flake8 .
 
 # Type checking with mypy
 poetry run mypy .
-
-# Run tests
-poetry run pytest
-
-```
-
-## Testing
-
-The project features a **modern, production-grade testing architecture** designed around **asynchronous task processing with Celery**. After Celery integration, the testing strategy has been completely modernized to handle async workflows, real infrastructure integration, and comprehensive end-to-end validation.
-
-### 🏗️ Two-Tier Testing Architecture
-
-#### **Tier 1: Unit/Mock Tests** (Fast Development)
-
-- **Purpose**: Rapid feedback during development
-- **Speed**: ~6 seconds for full fast suite (measured)
-- **Method**: Mock Celery tasks and external services
-- **Usage**: Continuous development, CI/CD pipelines
-
-#### **Tier 2: Integration Tests** (Production Validation)
-
-- **Purpose**: End-to-end validation with real infrastructure
-- **Speed**: 2-3 minutes (includes real LLM API calls)
-- **Method**: Real Redis + Celery workers + database
-- **Usage**: Pre-deployment validation, regression testing
-
-### 📁 Modern Test Structure
-
-```
-tests/
-├── conftest.py                      # Core test configuration and fixtures
-│
-├── shared/                          # 🧱 Foundation Components
-│   ├── test_models.py               # SQLAlchemy model validation
-│   ├── test_schemas.py              # Pydantic schema testing
-│   └── test_main.py                 # FastAPI application tests
-│
-├── tasks/ 🆕                        # ⚡ Celery Task Management
-│   ├── conftest.py                  # Celery fixtures and mock services
-│   ├── test_task_service.py         # TaskService unit tests (mocked)
-│   └── test_tasks_api.py            # Task API endpoints (/api/v1/tasks/*)
-│
-├── stories/                         # 📚 Story Management
-│   ├── test_unit.py                 # Business logic validation
-│   ├── test_integration.py          # Legacy sync API tests
-│   ├── test_integration_async.py 🆕  # Async API tests (mocked tasks)
-│   ├── test_integration_celery.py 🆕 # Real Celery integration tests
-│   └── conftest.py                  # Story-specific fixtures
-│
-├── llm/ 🔄                          # 🤖 AI/LLM Functionality (Modernized)
-│   ├── test_unit.py                 # LLM service unit tests
-│   ├── test_integration.py          # Direct LLM API integration
-│   ├── test_llm_api.py              # Sync endpoints (health, models, stats)
-│   ├── test_llm_api_async.py 🆕      # Async endpoints returning TaskResponse
-│   ├── test_integration_celery.py 🆕 # Real LLM + Celery integration
-│   └── conftest.py                  # LLM fixtures and configurations
-│
-└── e2e/                             # 🌐 End-to-End Workflows
-    ├── test_workflows.py.deprecated # Legacy sync workflow tests
-    ├── test_workflows_async.py 🆕    # Modern async workflow tests
-    ├── locustfile.py                # Performance testing scenarios
-    └── conftest.py                  # E2E test fixtures
-```
-
-### 🚀 Running Tests
-
-#### **Quick Development Tests**
-
-```bash
-# Fast tests only (excludes slow integration)
-poetry run pytest -m "not slow and not llm_integration and not celery_integration" -v
-
-# Unit tests with mocks (~6 seconds)
-poetry run pytest tests/shared/ tests/tasks/test_task_service.py tests/stories/test_unit.py -v
-```
-
-#### **Async API Tests**
-
-```bash
-# Test async TaskResponse endpoints
-poetry run pytest tests/llm/test_llm_api_async.py tests/stories/test_integration_async.py -v
-
-# Test TaskService and Task API
-poetry run pytest tests/tasks/test_task_service.py tests/tasks/test_tasks_api.py -v
-```
-
-#### **Celery Integration Tests** (Requires Infrastructure)
-
-```bash
-# 1. Start infrastructure with Docker profiles
-./docker-setup.sh celery   # Redis + Celery worker + Flower
-
-# 2. Run real integration tests
-poetry run pytest -m celery_integration -v
-
-# 3. Specific integration suites
-poetry run pytest tests/stories/test_integration_celery.py -v    # Stories + Celery
-poetry run pytest tests/llm/test_integration_celery.py -v       # LLM + Celery
-poetry run pytest tests/tasks/ -v                              # Task management
-```
-
-#### **Coverage and Comprehensive Testing**
-
-```bash
-# Full test suite
-poetry run pytest
-
-# With coverage report
-poetry run pytest --cov=. --cov-report=html:reports/coverage
-open reports/coverage/index.html
-
-# All tests without Celery integration
-poetry run pytest -m "not celery_integration" -v
-```
-
-### 🏷️ Test Markers and Categories
-
-#### **Primary Markers**
-
-- `celery_integration`: Requires Redis + Celery worker infrastructure
-- `celery_mock`: Uses mocked Celery components (fast)
-- `llm_integration`: Requires real LLM API keys
-- `slow`: Long-running tests (> 30 seconds)
-- `e2e`: Complete workflow validation
-
-#### **Test Categories by Speed**
-
-```bash
-# ⚡ Lightning Fast (< 5s) - Daily development
-poetry run pytest tests/shared/ tests/tasks/test_task_service.py -v
-
-# 🏃 Fast (< 30s) - Pre-commit validation
-poetry run pytest -m "not slow and not celery_integration" -v
-
-# 🐢 Slow (30-90s) - Pre-deployment validation
-poetry run pytest -m celery_integration -v
 ```
 
 ### 🔧 VS Code Integration
 
 #### **Essential Development Tasks**
 
-- `Poetry: Run Fast Tests Only` - Daily development workflow
-- `Poetry: Run Task Service Tests` - TaskService validation
-- `Poetry: Run Async LLM API Tests` - Async endpoint testing
+- `Poetry: Run Unit Tests Only` - Daily development workflow (unit tests)
+- `Poetry: Run Tests` - Integration testing with MySQL database
+- `Poetry: Run All Task Tests` - TaskService validation
+- `Poetry: Run All New Async Tests` - Modern async test suite
 
-#### **Integration Testing Tasks**
+#### **Component-Specific Testing Tasks**
 
-- `Poetry: Run All Celery Integration Tests` - Full infrastructure testing
-- `Poetry: Run Stories Celery Integration Tests` - Story workflow validation
-- `Poetry: Run LLM Celery Integration Tests` - AI feature validation
+- `Poetry: Run Stories Tests` - Story management tests
+- `Poetry: Run LLM Tests` - LLM functionality tests
+- `Poetry: Run All Celery Integration Tests` - End-to-end infrastructure testing
 
 #### **Specialized Testing Tasks**
 
 - `Poetry: Run Tests Without Celery Integration` - Fast CI/CD pipeline
-- `Poetry: Run All New Async Tests` - Modern async test suite
+- `Poetry: Run Fast Tests Only` - Unit tests only
 
 _Access via: `Ctrl+Shift+P` → "Tasks: Run Task"_
 
-### 🔄 API Testing Strategy After Celery Integration
-
-#### **Before Celery** (Legacy):
-
-```python
-# Synchronous API expectation - immediate result
-response = client.post("/api/v1/llm/generate", json={
-    "prompt": "A brave knight's adventure",
-    "genre": "fantasy",
-    "length": "short"
-})
-assert response.status_code == 200
-data = response.json()
-assert "story" in data  # Direct story content
-assert len(data["story"]) > 100
-assert "metadata" in data
-```
-
-#### **After Celery** (Modern E2E Testing):
-
-```python
-# Step 1: Submit async task
-response = client.post("/api/v1/llm/generate", json={
-    "prompt": "A brave knight's adventure",
-    "genre": "fantasy",
-    "length": "short"
-})
-assert response.status_code == 200
-task_data = response.json()
-assert "task_id" in task_data
-assert task_data["status"] == "PENDING"
-task_id = task_data["task_id"]
-
-# Step 2: Poll for task completion (integration tests)
-import time
-max_wait = 60  # seconds
-start_time = time.time()
-
-while time.time() - start_time < max_wait:
-    task_response = client.get(f"/api/v1/tasks/{task_id}")
-    assert task_response.status_code == 200
-    task_status = task_response.json()
-
-    if task_status["status"] == "SUCCESS":
-        # Step 3: Verify the actual generated story
-        result = task_status["result"]
-        assert "story" in result
-        assert len(result["story"]) > 100  # Generated content exists
-        assert "knight" in result["story"].lower()  # Prompt reflected
-        assert "metadata" in result
-        assert result["metadata"]["word_count"] > 0
-        break
-    elif task_status["status"] == "FAILURE":
-        pytest.fail(f"Task failed: {task_status.get('error', 'Unknown error')}")
-
-    time.sleep(2)  # Wait before next poll
-else:
-    pytest.fail(f"Task {task_id} did not complete within {max_wait} seconds")
-```
-
-### 🏭 Infrastructure Requirements
-
-#### **Unit/Mock Tests**: None
-
-- Uses temporary SQLite database
-- Mocks all external services
-- No Redis or Celery required
-
-#### **Integration Tests**: Full Infrastructure
-
-```bash
-# Required services
-./docker-setup.sh celery   # Redis + Celery worker + Flower (all in containers)
-
-# Database options
-# Option 1: SQLite (default, automatic)
-# Option 2: MySQL via Docker (included in celery profile)
-```
-
-### 📊 Test Performance Metrics
-
-| Test Category          | Count | Duration | Infrastructure |
-| ---------------------- | ----- | -------- | -------------- |
-| **Unit Tests**         | ~40   | < 5s     | None           |
-| **Mock Async Tests**   | ~25   | < 15s    | None           |
-| **Celery Integration** | ~15   | 30-90s   | Redis + Worker |
-| **LLM Integration**    | ~8    | 60-120s  | + LLM API      |
-| **Legacy Tests**       | ~30   | -        | (Deprecated)   |
-
-### 🎯 Testing Best Practices
-
-#### **Daily Development**
-
-1. Run fast tests continuously: `poetry run pytest -m "not slow" -v`
-2. Use VS Code tasks for common scenarios
-3. Focus on unit tests for rapid iteration
-
-#### **Pre-Commit Validation**
-
-1. Run all non-integration tests: `poetry run pytest -m "not celery_integration" -v`
-2. Verify code quality: `poetry run black . && poetry run isort . && poetry run flake8`
-3. Check type safety: `poetry run mypy .`
-
-#### **Pre-Deployment Validation**
-
-1. Start full infrastructure: Redis + Celery + MySQL
-2. Run complete integration suite: `poetry run pytest -v`
-3. Verify real LLM integration with API keys
-4. Run performance tests: Locust scenarios
-
-#### **Continuous Integration**
-
-- **Pipeline 1**: Fast tests (< 5 min) - on every commit
-- **Pipeline 2**: Integration tests (< 15 min) - on pull requests
-- **Pipeline 3**: Full validation (< 30 min) - on main branch
-
-### 🔍 Debugging Integration Tests
-
-#### **Common Issues and Solutions**
+### **Common Issues and Solutions**
 
 **Redis Connection Errors:**
 
@@ -709,130 +463,6 @@ export DEEPINFRA_API_KEY="your-key"
 ```
 
 This modern testing architecture ensures **production-grade reliability** while maintaining **developer productivity** through intelligent test categorization and infrastructure automation.
-
-### LLM Testing
-
-LLM tests are organized into categories:
-
-- **Unit tests** (`tests/llm/test_unit.py`): Fast tests with mocked LLM services
-- **Integration tests** (`tests/llm/test_integration.py`): Real API calls to configured LLM providers
-- **API tests** (`tests/llm/test_llm_api.py`): FastAPI endpoint tests with mocked services
-
-LLM integration tests require API keys:
-
-```bash
-export OPENAI_API_KEY="your-key"
-export DEEPINFRA_API_KEY="your-key"
-# Tests will automatically skip if keys are missing
-```
-
-### Performance Testing
-
-Run performance tests with different load scenarios:
-
-```bash
-# Start the application first
-poetry run uvicorn main:app --reload --port 8080
-
-# Light load test (10 users, 2 min)
-poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
-  --headless --users 10 --spawn-rate 2 --run-time 2m
-
-# Medium load test (50 users, 5 min)
-poetry run locust -f tests/e2e/locustfile.py --host=http://localhost:8080 \
-  --headless --users 50 --spawn-rate 5 --run-time 5m
-
-# Or use pre-configured tasks
-npm run test:performance:light   # If using VS Code tasks
-```
-
-### Docker Test Environment
-
-For integration testing with MySQL (same as production), use the dedicated test environment with profiles:
-
-```bash
-# Basic test database (MySQL only on port 3307)
-./test-setup.sh start
-# or: docker-compose -f docker-compose.test.yml up -d
-
-# With Celery for integration tests (Redis on port 6380)
-./test-setup.sh celery
-# or: docker-compose -f docker-compose.test.yml --profile celery up -d
-
-# Run tests with MySQL instead of SQLite
-./test-setup.sh test
-# or: TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" poetry run pytest tests/ -v
-
-# Run Celery integration tests
-./test-setup.sh test-celery
-# or: TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:3307/storyteller_test" CELERY_BROKER_URL="redis://localhost:6380/0" CELERY_RESULT_BACKEND="redis://localhost:6380/1" poetry run pytest -m celery_integration -v
-
-# Show test environment status
-./test-setup.sh status
-
-# Clean up test environment (no persistent data)
-./test-setup.sh clean
-# or: docker-compose -f docker-compose.test.yml down
-```
-
-#### Test Environment Features
-
-- **Isolated databases**: MySQL (port 3307) and Redis (port 6380)
-- **Celery integration**: Real Redis + Celery worker testing with profiles
-- **Production parity**: Same versions and configuration as production
-- **Clean state**: Each test run starts with fresh, empty databases
-- **No persistence**: Test data is automatically discarded on container stop
-- **CI/CD ready**: Perfect for automated testing pipelines
-- **No conflicts**: Runs alongside development environment
-- **Profile support**: Choose only the services you need for testing
-
-#### Test Database Configuration
-
-| Service             | Development          | Test Environment          |
-| ------------------- | -------------------- | ------------------------- |
-| **MySQL Port**      | 3306                 | 3307                      |
-| **Redis Port**      | 6379                 | 6380                      |
-| **MySQL DB**        | `storyteller`        | `storyteller_test`        |
-| **MySQL User**      | `storyteller_user`   | `test_user`               |
-| **MySQL Container** | `story-teller-mysql` | `story-teller-mysql-test` |
-| **Redis Container** | `story-teller-redis` | `story-teller-redis-test` |
-
-## Performance Testing
-
-The project includes comprehensive performance tests using Locust to simulate realistic API usage patterns.
-
-### Performance Test Structure
-
-```
-tests/performance/
-├── __init__.py          # Package marker
-├── locustfile.py        # Main Locust test scenarios
-├── config.py            # Test configurations
-└── README.md            # Performance testing documentation
-```
-
-### Running Performance Tests
-
-```bash
-# Start the API server first
-poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8080
-
-# Start Locust web interface
-poetry run locust --host=http://localhost:8080
-# Then open http://localhost:8089
-
-# Or run predefined test scenarios
-poetry run locust --host=http://localhost:8080 --headless --users 50 --spawn-rate 5 --run-time 2m --html reports/performance/load_test.html
-```
-
-### Test Scenarios
-
-- **Light Load Test**: 10 users, 2m duration - for development
-- **Medium Load Test**: 50 users, 5m duration - for staging
-- **Heavy Load Test**: 200 users, 10m duration - for production readiness
-- **Stress Test**: 500 users, 5m duration - to find system limits
-- **Spike Test**: 100 users, fast spawn - for sudden traffic increases
-- **Endurance Test**: 30 users, 30m duration - for long-term stability
 
 ### User Types Simulated
 
@@ -944,117 +574,6 @@ curl "http://localhost:8080/api/v1/llm/health"
 # Get usage statistics
 curl "http://localhost:8080/api/v1/llm/stats"
 ```
-
-## Development
-
-### Project Structure
-
-```
-story-teller/
-├── main.py                 # FastAPI application entry point (imports from app/)
-├── pyproject.toml          # Poetry configuration and dependencies
-├── poetry.lock             # Poetry lock file
-├── .env                   # Environment variables
-├── llm_config.yaml        # LLM providers configuration
-├── test_llm.py            # LLM integration testing script
-├── app/                   # Main application package
-│   ├── __init__.py
-│   ├── main.py            # FastAPI app creation and configuration
-│   ├── models/            # SQLAlchemy models
-│   │   ├── __init__.py
-│   │   └── story.py
-│   ├── schemas/           # Pydantic schemas
-│   │   ├── __init__.py
-│   │   └── story.py
-│   ├── routers/           # API route handlers
-│   │   ├── __init__.py
-│   │   ├── stories.py
-│   │   └── llm.py         # LLM API endpoints
-│   ├── llm/               # LLM integration module
-│   │   ├── __init__.py
-│   │   ├── config.py      # LLM configuration management
-│   │   ├── models.py      # LLM data models
-│   │   ├── services.py    # LLM service implementations
-│   │   ├── chains.py      # LangChain processing chains
-│   │   └── prompts.py     # Prompt templates
-│   └── database/          # Database configuration
-│       ├── __init__.py
-│       └── connection.py
-├── tests/                 # Test suite
-│   ├── unit/              # Unit tests (models, schemas, core logic)
-│   ├── integration/       # Integration tests (API endpoints, workflows)
-│   └── performance/       # Performance testing with Locust
-└── docker-compose.yml     # Docker configuration
-```
-
-### Code Quality
-
-This project includes several development tools configured via Poetry:
-
-- **Black**: Code formatter for consistent code style
-- **isort**: Import sorter for organized imports
-- **flake8**: Linter for code quality checks
-- **mypy**: Static type checker
-- **pytest**: Testing framework
-
-Run all quality checks:
-
-```bash
-poetry run black .
-poetry run isort .
-poetry run flake8 .
-poetry run mypy .
-poetry run pytest
-```
-
-### VS Code Tasks
-
-The project includes predefined VS Code tasks:
-
-**Development:**
-
-- Run FastAPI Development Server (Poetry)
-- Poetry: Install Dependencies
-- Poetry: Add Dependency
-
-**Code Quality:**
-
-- Poetry: Format Code (Black)
-- Poetry: Sort Imports (isort)
-- Poetry: Lint Code (flake8)
-- Poetry: Type Check (mypy)
-
-**Testing:**
-
-- Poetry: Run Tests
-- Poetry: Run Tests with Coverage
-- Poetry: Run Unit Tests Only
-- Poetry: Run API Tests Only
-- Poetry: Run Integration Tests Only
-
-**Performance Testing:**
-
-- Locust: Start Web Interface
-- Locust: Light Load Test
-- Locust: Medium Load Test
-- Locust: Heavy Load Test
-- Locust: Stress Test
-- Locust: Spike Test
-- Locust: Endurance Test
-
-**Maintenance:**
-
-- Poetry: Check Outdated Packages
-- Poetry: Update All Dependencies
-- Poetry: Update Core Dependencies (Priority)
-
-Access these via `Ctrl+Shift+P` > "Tasks: Run Task"
-
-## Database
-
-The application uses SQLite by default. The database file (`stories.db`) will be created automatically when you first run the application.
-
-To use a different database, update the `DATABASE_URL` in your `.env` file.
 
 ## Environment Variables
 

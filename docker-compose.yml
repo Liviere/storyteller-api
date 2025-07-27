@@ -1,27 +1,4 @@
 services:
-  # MySQL Database
-  mysql:
-    image: mysql:8.0
-    container_name: story-teller-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword123}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-storyteller}
-      MYSQL_USER: ${MYSQL_USER:-storyteller_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-storyteller_pass}
-    ports:
-      - '${MYSQL_HOST_PORT:-3306}:${MYSQL_CONTAINER_PORT:-3306}'
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    networks:
-      - story-teller-network
-    healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
-      timeout: 20s
-      retries: 10
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-
   # FastAPI Application
   app:
     build: .
@@ -49,6 +26,10 @@ services:
       CELERY_BROKER_URL: redis://redis:${REDIS_CONTAINER_PORT:-6379}/0
       CELERY_RESULT_BACKEND: redis://redis:${REDIS_CONTAINER_PORT:-6379}/1
       SENTRY_DSN: ${SENTRY_DSN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DEEPINFRA_API_KEY: ${DEEPINFRA_API_KEY}
+      CUSTOM_LLM_API_KEY: ${CUSTOM_LLM_API_KEY}
+      CUSTOM_LLM_BASE_URL: ${CUSTOM_LLM_BASE_URL}
     depends_on:
       mysql:
         condition: service_healthy
@@ -56,7 +37,69 @@ services:
       - story-teller-network
     volumes:
       - ./logs:/app/logs
-    profiles: ['production']
+    profiles: ['production', 'full']
+
+  # Celery Worker
+  celery-worker:
+    build: .
+    container_name: story-teller-celery-worker
+    restart: unless-stopped
+    command: >
+      sh -c "poetry run celery -A app.celery_app.celery:celery_app worker 
+             --loglevel=info 
+             --concurrency=4 
+             --queues=default,stories,llm 
+             --hostname=worker@%h 
+             --max-tasks-per-child=100 
+             --time-limit=300 
+             --soft-time-limit=240"
+    environment:
+      CELERY_BROKER_URL: redis://redis:${REDIS_CONTAINER_PORT:-6379}/0
+      CELERY_RESULT_BACKEND: redis://redis:${REDIS_CONTAINER_PORT:-6379}/1
+      DATABASE_URL: mysql+mysqlconnector://${MYSQL_USER:-storyteller_user}:${MYSQL_PASSWORD:-storyteller_pass}@mysql:${MYSQL_CONTAINER_PORT:-3306}/${MYSQL_DATABASE:-storyteller}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: ${MYSQL_CONTAINER_PORT:-3306}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-storyteller}
+      MYSQL_USER: ${MYSQL_USER:-storyteller_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-storyteller_pass}
+      SENTRY_DSN: ${SENTRY_DSN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DEEPINFRA_API_KEY: ${DEEPINFRA_API_KEY}
+      CUSTOM_LLM_API_KEY: ${CUSTOM_LLM_API_KEY}
+      CUSTOM_LLM_BASE_URL: ${CUSTOM_LLM_BASE_URL}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - story-teller-network
+    volumes:
+      - ./logs:/app/logs
+    profiles: ['production', 'celery', 'full']
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: story-teller-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-storyteller}
+      MYSQL_USER: ${MYSQL_USER:-storyteller_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-storyteller_pass}
+    ports:
+      - '${MYSQL_HOST_PORT:-3306}:${MYSQL_CONTAINER_PORT:-3306}'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - story-teller-network
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      timeout: 20s
+      retries: 10
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
   # phpMyAdmin (optional - for database management)
   phpmyadmin:
@@ -96,41 +139,6 @@ services:
       retries: 3
     profiles:
       ['celery', 'infrastructure', 'tools', 'monitoring', 'production', 'full']
-
-  # Celery Worker
-  celery-worker:
-    build: .
-    container_name: story-teller-celery-worker
-    restart: unless-stopped
-    command: >
-      sh -c "poetry run celery -A app.celery_app.celery:celery_app worker 
-             --loglevel=info 
-             --concurrency=4 
-             --queues=default,stories,llm 
-             --hostname=worker@%h 
-             --max-tasks-per-child=100 
-             --time-limit=300 
-             --soft-time-limit=240"
-    environment:
-      CELERY_BROKER_URL: redis://redis:${REDIS_CONTAINER_PORT:-6379}/0
-      CELERY_RESULT_BACKEND: redis://redis:${REDIS_CONTAINER_PORT:-6379}/1
-      DATABASE_URL: mysql+mysqlconnector://${MYSQL_USER:-storyteller_user}:${MYSQL_PASSWORD:-storyteller_pass}@mysql:${MYSQL_CONTAINER_PORT:-3306}/${MYSQL_DATABASE:-storyteller}
-      MYSQL_HOST: mysql
-      MYSQL_PORT: ${MYSQL_CONTAINER_PORT:-3306}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-storyteller}
-      MYSQL_USER: ${MYSQL_USER:-storyteller_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-storyteller_pass}
-      SENTRY_DSN: ${SENTRY_DSN}
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - story-teller-network
-    volumes:
-      - ./logs:/app/logs
-    profiles: ['production']
 
   # Flower Monitoring
   flower:

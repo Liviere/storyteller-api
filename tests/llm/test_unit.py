@@ -1,27 +1,16 @@
 """
 Unit tests for LLM module components.
-
-This module contains unit tests for:
-- LLM configuration loading and validation
-- LLM service layer functionality
-- Model selection and initialization
-- Error handling and validation
-
-All tests in this module use mocks and don't make actual API calls.
 """
 
 import asyncio
-import os
-from datetime import datetime
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, mock_open, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.llm.config import LLMConfig, llm_config
+from app.llm.config import LLMConfig
 from app.llm.services import LLMService, get_llm_service
 
-
+@pytest.mark.unit
 class TestLLMConfig:
     """Test LLM configuration loading and validation."""
 
@@ -97,7 +86,7 @@ class TestLLMConfig:
             assert hasattr(model_config, "max_tokens")
             assert hasattr(model_config, "temperature")
 
-
+@pytest.mark.unit
 class TestLLMServiceInitialization:
     """Test LLM service initialization and configuration."""
 
@@ -140,7 +129,7 @@ class TestLLMServiceInitialization:
             assert hasattr(service, method_name)
             assert callable(getattr(service, method_name))
 
-
+@pytest.mark.unit
 class TestLLMServiceMethods:
     """Test LLM service method implementations."""
 
@@ -150,7 +139,6 @@ class TestLLMServiceMethods:
         return LLMService()
 
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_generate_story_basic(self, service):
         """Test basic story generation functionality."""
         # Mock the entire chain creation and execution process
@@ -178,8 +166,8 @@ class TestLLMServiceMethods:
             assert "word_count" in result["metadata"]
             assert result["metadata"]["word_count"] == 4  # "Once upon a time" = 4 words
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_analyze_story_basic(self, service, sample_story_content):
         """Test basic story analysis functionality."""
         with (
@@ -207,8 +195,8 @@ class TestLLMServiceMethods:
             )
             assert result["analysis_type"] == "full"
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_summarize_story_basic(self, service, sample_story_content):
         """Test basic story summarization functionality."""
         with (
@@ -233,8 +221,8 @@ class TestLLMServiceMethods:
             assert result["summary"] == "A brief summary of the adventure."
             assert len(result["summary"]) > 0
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_improve_story_basic(self, service, sample_story_content):
         """Test basic story improvement functionality."""
         with (
@@ -298,7 +286,7 @@ class TestLLMServiceMethods:
         assert result["errors_count"] == 3
         assert "last_request" in result
 
-
+@pytest.mark.unit
 class TestLLMServiceErrorHandling:
     """Test LLM service error handling."""
 
@@ -307,7 +295,6 @@ class TestLLMServiceErrorHandling:
         return LLMService()
 
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_generate_story_chain_error(self, service):
         """Test error handling in story generation."""
         with patch(
@@ -322,8 +309,8 @@ class TestLLMServiceErrorHandling:
 
             assert "Chain execution failed" in str(exc_info.value)
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_analyze_story_invalid_type(self, service, sample_story_content):
         """Test analysis with invalid analysis type."""
         # The service should handle validation, but let's test what happens
@@ -340,8 +327,8 @@ class TestLLMServiceErrorHandling:
                     content=sample_story_content, analysis_type="invalid"
                 )
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_service_timeout_handling(self, service):
         """Test handling of timeout errors."""
         with patch(
@@ -356,7 +343,7 @@ class TestLLMServiceErrorHandling:
             with pytest.raises(asyncio.TimeoutError):
                 await service.generate_story(prompt="A brave knight", genre="fantasy")
 
-
+@pytest.mark.unit
 class TestLLMServiceParameterValidation:
     """Test parameter validation in LLM service methods."""
 
@@ -364,8 +351,8 @@ class TestLLMServiceParameterValidation:
     def service(self):
         return LLMService()
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_generate_story_parameter_validation(self, service):
         """Test parameter validation for story generation."""
         with patch(
@@ -391,8 +378,8 @@ class TestLLMServiceParameterValidation:
             )
             assert "story" in result
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_analyze_story_parameter_validation(
         self, service, sample_story_content
     ):
@@ -420,7 +407,7 @@ class TestLLMServiceParameterValidation:
             )
             assert "analysis" in result
 
-
+@pytest.mark.unit
 class TestLLMServiceUsageStats:
     """Test usage statistics tracking."""
 
@@ -428,8 +415,8 @@ class TestLLMServiceUsageStats:
     def service(self):
         return LLMService()
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_stats_tracking_on_success(self, service):
         """Test that stats are updated on successful requests."""
         initial_stats = service.get_usage_stats()
@@ -448,8 +435,8 @@ class TestLLMServiceUsageStats:
             # Note: This depends on the actual implementation of stats tracking
             # The test might need adjustment based on how stats are actually tracked
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_stats_tracking_on_error(self, service):
         """Test that error stats are updated on failed requests."""
         initial_stats = service.get_usage_stats()
@@ -468,7 +455,7 @@ class TestLLMServiceUsageStats:
             # Note: This test depends on whether the service actually tracks errors
             # Implementation may vary
 
-
+@pytest.mark.unit
 class TestLLMServiceModelSelection:
     """Test model selection and fallback logic."""
 
@@ -476,8 +463,8 @@ class TestLLMServiceModelSelection:
     def service(self):
         return LLMService()
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_model_selection_with_specific_model(self, service):
         """Test that specific model is used when provided."""
         with patch(
@@ -495,8 +482,8 @@ class TestLLMServiceModelSelection:
             mock_chain_creator.assert_called_once()
             assert "story" in result
 
+    
     @pytest.mark.asyncio
-    @pytest.mark.llm_mock
     async def test_model_fallback_on_primary_failure(self, service):
         """Test fallback to secondary model when primary fails."""
         # This test depends on the actual implementation of fallback logic

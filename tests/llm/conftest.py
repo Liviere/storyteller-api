@@ -207,7 +207,7 @@ def sample_improvement_requests(sample_story_content):
 
 
 @pytest.fixture
-def skip_integration_tests(llm_config_data):
+def skip_llm_integration_tests(llm_config_data):
     """Determine whether to skip integration tests based on available providers and API keys."""
     import os
 
@@ -241,20 +241,6 @@ def skip_integration_tests(llm_config_data):
         )
 
     return True
-
-
-@pytest.fixture
-def integration_test_models(test_models_list):
-    """Get models available for integration testing."""
-    # Filter out models that are expensive or slow for testing
-    fast_models = ["gpt-4.1-nano", "google/gemma-3-4b-it"]
-
-    available_models = {}
-    for task, models in test_models_list.items():
-        # Only include fast models for testing
-        available_models[task] = [m for m in models if m in fast_models]
-
-    return available_models
 
 
 def pytest_configure(config):

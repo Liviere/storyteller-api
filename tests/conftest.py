@@ -18,17 +18,20 @@ from sqlalchemy.orm import sessionmaker
 from app.database.connection import get_db
 from app.models.story import Base
 from app.services.task_service import get_task_service
+from app.main import create_app
 from main import app
+from fastapi import FastAPI
 
 
 def get_test_database_url():
     """Get test database URL based on environment."""
-    # Check if we should use MySQL for testing (e.g., in CI/CD)
+    # Check if we should use MySQL for testing (e.g., in CI/CD or explicit testing)
     test_mysql_url = os.getenv("TEST_DATABASE_URL")
-    if test_mysql_url and "mysql" in test_mysql_url:
+    if test_mysql_url:
         return test_mysql_url
 
-    # Default to SQLite for local testing
+    # Default to SQLite for fast unit tests to avoid dependency on MySQL
+    # This ensures fast tests work without requiring MySQL server
     temp_file = tempfile.NamedTemporaryFile(delete=False)
     temp_file.close()
     return f"sqlite:///{temp_file.name}"
@@ -77,7 +80,6 @@ def db_session(temp_db):
     finally:
         session.close()
 
-
 @pytest.fixture
 def client(temp_db) -> Generator[TestClient, None, None]:
     """Create a test client with a temporary database."""
@@ -96,46 +98,6 @@ def client(temp_db) -> Generator[TestClient, None, None]:
         yield test_client
 
     app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def sample_story_data():
-    """Sample story data for testing."""
-    return {
-        "title": "Test Story",
-        "content": "This is a test story content.",
-        "author": "Test Author",
-        "genre": "Fiction",
-        "is_published": False,
-    }
-
-
-@pytest.fixture
-def sample_stories_data():
-    """Multiple sample stories for testing."""
-    return [
-        {
-            "title": "Fantasy Adventure",
-            "content": "A tale of magic and dragons.",
-            "author": "Fantasy Author",
-            "genre": "Fantasy",
-            "is_published": True,
-        },
-        {
-            "title": "Sci-Fi Journey",
-            "content": "A story about space exploration.",
-            "author": "Sci-Fi Author",
-            "genre": "Science Fiction",
-            "is_published": False,
-        },
-        {
-            "title": "Mystery Novel",
-            "content": "A thrilling mystery story.",
-            "author": "Mystery Author",
-            "genre": "Mystery",
-            "is_published": True,
-        },
-    ]
 
 
 # Celery testing fixtures
@@ -165,16 +127,6 @@ def mock_task_service():
     
     return mock_service
 
-
-@pytest.fixture
-def override_task_service(mock_task_service):
-    """Override TaskService dependency with mock."""
-    app.dependency_overrides[get_task_service] = lambda: mock_task_service
-    yield mock_task_service
-    if get_task_service in app.dependency_overrides:
-        del app.dependency_overrides[get_task_service]
-
-
 # Command line options for pytest
 def pytest_addoption(parser):
     """Add custom command line options."""
@@ -200,3 +152,15 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "celery_integration: mark test as requiring Celery worker"
     )
+
+
+@pytest.fixture
+def test_models(test_models_list):
+    """Get models available for integration testing - imported from LLM conftest."""
+
+    available_models = {}
+    for task, models in test_models_list.items():
+        # Only include fast models for testing
+        available_models[task] = [m for m in models]
+
+    return available_models

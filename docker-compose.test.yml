@@ -34,7 +34,36 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    profiles: ['celery', 'full']
+    profiles: ['full']
+
+  # Celery Worker for Testing (optional profile)
+  worker-test:
+    build: .
+    container_name: story-teller-worker-test
+    restart: unless-stopped
+    environment:
+      - CELERY_BROKER_URL=redis://redis-test:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis-test:6379/1
+      - DATABASE_URL=mysql+mysqlconnector://test_user:test_pass@mysql-test:3306/storyteller_test
+      - PYTHONPATH=/app
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY:-}
+      - CUSTOM_LLM_API_KEY=${CUSTOM_LLM_API_KEY:-}
+      - CUSTOM_LLM_BASE_URL=${CUSTOM_LLM_BASE_URL:-http://localhost:8000}
+    depends_on:
+      redis-test:
+        condition: service_healthy
+      mysql-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    command: celery -A app.celery_app.celery worker --loglevel=info --concurrency=2
+    profiles: ['full']
+    healthcheck:
+      test: ['CMD', 'celery', '-A', 'app.celery_app.celery', 'inspect', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   test-network:

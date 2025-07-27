@@ -46,28 +46,30 @@ show_help() {
     echo "Usage: $0 [command]"
     echo ""
     echo "Commands:"
-    echo "  start        Start MySQL test database only"
-    echo "  celery       Start MySQL + Redis for Celery integration tests"
-    echo "  full         Start full test environment"
-    echo "  stop         Stop test environment"
-    echo "  clean        Stop test environment (no persistent data to remove)"
-    echo "  test         Run tests with MySQL"
-    echo "  test-celery  Run Celery integration tests"
-    echo "  status       Show test environment status"
-    echo "  logs         Show test environment logs"
-    echo "  help         Show this help message"
+    echo "  init                   Start full test environment (MySQL + Redis + Celery worker)"
+    echo "  init-integration       Start MySQL test database only"
+    echo "  stop                   Stop test environment"
+    echo "  clean                  Stop test environment (no persistent data to remove)"
+    echo "  test                   Run all tests (unit + integration + e2e)"
+    echo "  test-unit              Run fast unit tests"
+    echo "  test-integration       Run integration tests"
+    echo "  test-e2e               Run Celery integration tests"
+    echo "  status                 Show test environment status"
+    echo "  logs                   Show test environment logs"
+    echo "  help                   Show this help message"
     echo ""
-    echo "Examples:"
-    echo "  $0 start                    # Basic MySQL test DB"
-    echo "  $0 celery                   # + Redis for Celery tests"
-    echo "  $0 test-celery              # Run Celery integration tests"
+    echo "Suggested workflow:"
+    echo "  $0 init-full           # Basic MySQL test DB"
+    echo "  $0 test                # Run Celery integration tests"
+    echo "  $0 stop                # Stop test environment"
+    echo "  $0 clean               # Clean up test environment"
     echo ""
     echo "Test databases run on different ports:"
     echo "  - MySQL: localhost:$TEST_MYSQL_PORT (vs ${MYSQL_HOST_PORT:-3306} for dev)"
     echo "  - Redis: localhost:$TEST_REDIS_PORT (vs ${REDIS_HOST_PORT:-6379} for dev)"
 }
 
-start_basic() {
+start_integration() {
     print_status "Starting MySQL test database..."
     docker-compose -f "$TEST_COMPOSE_FILE" up -d mysql-test
     
@@ -92,22 +94,6 @@ start_basic() {
     return 1
 }
 
-start_with_celery() {
-    print_status "Starting test environment with Celery..."
-    docker-compose -f "$TEST_COMPOSE_FILE" --profile celery up -d
-    
-    print_status "Waiting for services to be ready..."
-    sleep 10
-    
-    print_success "Test environment with Celery ready!"
-    echo ""
-    echo "Test Environment Info:"
-    echo "  MySQL: localhost:$TEST_MYSQL_PORT"
-    echo "  Redis: localhost:$TEST_REDIS_PORT"
-    echo ""
-    echo "Run Celery tests with: $0 test-celery"
-}
-
 start_full() {
     print_status "Starting full test environment..."
     docker-compose -f "$TEST_COMPOSE_FILE" --profile full up -d
@@ -130,33 +116,70 @@ clean_environment() {
     print_success "Test environment cleaned (no persistent data to remove)."
 }
 
-run_tests() {
+run_unit_tests() {
+    print_status "Running fast unit tests..."
+    
+    # Fast tests use SQLite and don't require any infrastructure
+    poetry run pytest -m "unit" -v
+}
+
+run_integration_tests() {
     print_status "Running tests with MySQL test database..."
     
     # Check if MySQL test is running
     if ! docker-compose -f "$TEST_COMPOSE_FILE" ps mysql-test | grep -q "Up"; then
         print_warning "MySQL test database not running. Starting it..."
-        start_basic
+        start_integration
     fi
     
+    export TESTING="true"
     export TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:$TEST_MYSQL_PORT/storyteller_test"
-    poetry run pytest tests/ -v
+    
+    poetry run pytest tests/ -v -m "integration"
 }
 
-run_celery_tests() {
-    print_status "Running Celery integration tests..."
+run_e2e_tests() {
+    print_status "Running e2e tests..."
     
-    # Check if Redis test is running
-    if ! docker-compose -f "$TEST_COMPOSE_FILE" ps redis-test | grep -q "Up"; then
-        print_warning "Test environment with Celery not running. Starting it..."
-        start_with_celery
+    # Check if Celery environment is running (Redis + Worker)
+    if ! docker-compose -f "$TEST_COMPOSE_FILE" ps redis-test | grep -q "Up" || \
+       ! docker-compose -f "$TEST_COMPOSE_FILE" ps worker-test | grep -q "Up"; then
+        print_warning "Test environment not fully running. Starting it..."
+        start_full
+        
+        # Wait for worker to be ready
+        print_status "Waiting for Celery worker to be ready..."
+        sleep 15
     fi
     
+    export TESTING="true"
     export TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:$TEST_MYSQL_PORT/storyteller_test"
     export CELERY_BROKER_URL="redis://localhost:$TEST_REDIS_PORT/0"
     export CELERY_RESULT_BACKEND="redis://localhost:$TEST_REDIS_PORT/1"
     
-    poetry run pytest -m celery_integration -v
+    poetry run pytest -m e2e -v
+}
+
+run_all_tests() {
+    print_status "Running all tests..."
+    
+    # Check if Celery environment is running (Redis + Worker)
+    if ! docker-compose -f "$TEST_COMPOSE_FILE" ps redis-test | grep -q "Up" || \
+       ! docker-compose -f "$TEST_COMPOSE_FILE" ps worker-test | grep -q "Up"; then
+        print_warning "Test environment not fully running. Starting it..."
+        start_full
+        
+        # Wait for worker to be ready
+        print_status "Waiting for Celery worker to be ready..."
+        sleep 15
+    fi
+    
+    export TESTING="true"
+    export TEST_DATABASE_URL="mysql+mysqlconnector://test_user:test_pass@localhost:$TEST_MYSQL_PORT/storyteller_test"
+    export CELERY_BROKER_URL="redis://localhost:$TEST_REDIS_PORT/0"
+    export CELERY_RESULT_BACKEND="redis://localhost:$TEST_REDIS_PORT/1"
+    
+    poetry run pytest -v
 }
 
 show_status() {
@@ -176,6 +199,12 @@ show_status() {
     else
         print_warning "❌ Redis test database: Not running"
     fi
+    
+    if docker-compose -f "$TEST_COMPOSE_FILE" ps worker-test 2>/dev/null | grep -q "Up"; then
+        print_success "✅ Celery worker test: Running"
+    else
+        print_warning "❌ Celery worker test: Not running"
+    fi
 }
 
 show_logs() {
@@ -185,13 +214,10 @@ show_logs() {
 
 # Main script logic
 case "${1:-help}" in
-    start)
-        start_basic
+    init-integration)
+        start_integration
         ;;
-    celery)
-        start_with_celery
-        ;;
-    full)
+    init)
         start_full
         ;;
     stop)
@@ -201,10 +227,16 @@ case "${1:-help}" in
         clean_environment
         ;;
     test)
-        run_tests
+        run_all_tests
         ;;
-    test-celery)
-        run_celery_tests
+    test-unit)
+        run_unit_tests
+        ;;
+    test-integration)
+        run_integration_tests
+        ;;
+    test-e2e)
+        run_e2e_tests
         ;;
     status)
         show_status

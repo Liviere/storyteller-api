@@ -2,32 +2,37 @@ import os
 from contextlib import asynccontextmanager
 
 import sentry_sdk
+from sqlalchemy import text
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database.connection import create_tables
+from app.database.connection import create_tables, engine
 from app.routers.llm import router as llm_router
 from app.routers.stories import router as stories_router
 from app.routers.tasks import router as tasks_router
 
+
 load_dotenv()  # Load environment variables from .env file
 
-SENTRY_DSN = os.getenv("SENTRY_DSN")
 
-if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,  # Sentry DSN from environment variable
-        # Add data like request headers and IP for users,
-        # see https://docs.sentry.io/platforms/python/data-collected/ for more info
-        send_default_pii=True,
-    )
+if os.getenv("TESTING") != "true":
+    SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+    if SENTRY_DSN:
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,  # Sentry DSN from environment variable
+            # Add data like request headers and IP for users,
+            # see https://docs.sentry.io/platforms/python/data-collected/ for more info
+            send_default_pii=True,
+        )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    create_tables()
+    if os.getenv("TESTING") != "true":
+        create_tables()
     yield
     # Shutdown - add cleanup logic here if needed
 
@@ -61,10 +66,6 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health_check():
         """Health check endpoint for Docker healthcheck and monitoring"""
-        from sqlalchemy import text
-
-        from app.database.connection import engine
-
         try:
             # Test database connection
             with engine.connect() as connection:

@@ -58,3 +58,10 @@ class BaseTask(celery_app.Task):
 
 # Set the base task class
 celery_app.Task = BaseTask
+
+if os.getenv("DEBUG_CELERY") and int(os.getenv("DEBUG_CELERY")) == 1:
+    import debugpy
+
+    debugpy.listen(("0.0.0.0", 5678))
+    print("🔴 Debugging is enabled. Waiting for debugger to attach...")
+    debugpy.wait_for_client()
